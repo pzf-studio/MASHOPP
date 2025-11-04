@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в админ-панель - MA Furniture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(255,255,255,1) 100%);
+            min-height: 100vh;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #d4af37;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            background: #b8941f;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+            padding: 10px;
+            background: #ffeaea;
+            border-radius: 5px;
+            border: 1px solid #ffcdd2;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .test-credentials {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #d4af37;
+        }
+
+        .test-credentials h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .test-credentials p {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form">
+            <div class="login-logo">
+                <span style="font-size: 1.8rem; font-weight: 700; letter-spacing: 2px;">MA FURNITURE</span>
+                <br>
+                <span style="color: #d4af37;">Админ-панель</span>
+            </div>
+            
+            <h2 class="login-title">Вход в систему</h2>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" name="username" required autocomplete="off" maxlength="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required maxlength="100">
+                </div>
+                
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span id="loginText">Войти</span>
+                    <span id="loginSpinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Вход...
+                    </span>
+                </button>
+                
+                <div class="error-message" id="errorMessage">
+                    Неверные учетные данные
+                </div>
+            </form>
+
+            <div class="test-credentials">
+                <h4>Тестовые учетные данные:</h4>
+                <p><strong>Логин:</strong> admin</p>
+                <p><strong>Пароль:</strong> admin123</p>
+                <p><strong>Или:</strong></p>
+                <p><strong>Логин:</strong> maf_admin</p>
+                <p><strong>Пароль:</strong> password</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Показываем загрузку
+            loginBtn.classList.add('loading');
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline';
+            errorMessage.style.display = 'none';
+
+            try {
+                // 🔐 Проверка безопасности
+                const securityCheck = adminAuth.checkLoginSecurity();
+                if (!securityCheck.allowed) {
+                    throw new Error(securityCheck.message);
+                }
+
+                // 🔐 Валидация ввода
+                if (!username.trim() || !password.trim()) {
+                    throw new Error('Заполните все поля');
+                }
+
+                // 🔐 Аутентификация
+                const isValid = await adminAuth.authenticate(username, password);
+                
+                if (isValid) {
+                    // Успешный вход
+                    errorMessage.style.display = 'none';
+                    
+                    // Задержка для UX
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 500);
+                    
+                } else {
+                    throw new Error('Неверные учетные данные');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+                
+            } finally {
+                // Скрываем загрузку
+                loginBtn.classList.remove('loading');
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+            }
+        });
+
+        // 🔐 Защита ввода
+        document.getElementById('username').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[<>]/g, '').substring(0, 50);
+        });
+
+        document.getElementById('password').addEventListener('input', function(e) {
+            this.value = this.value.substring(0, 100);
+        });
+
+        // 🔐 Проверка существующей сессии
+        if (adminAuth.validateSession()) {
+            window.location.href = 'admin.html';
+        }
+    </script>
+</body>
+</html>
