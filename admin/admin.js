@@ -483,7 +483,7 @@ class AdminPanel {
             this.saveProducts();
             this.renderProducts();
             this.closeModal('productModal');
-            this.notifyProductsUpdate();
+            this.syncWithShop();
 
         } catch (error) {
             console.error('Save product error:', error);
@@ -531,7 +531,7 @@ class AdminPanel {
             this.saveSections();
             this.renderSections();
             this.closeModal('sectionModal');
-            this.notifySectionsUpdate(); // Уведомляем об обновлении разделов
+            this.syncWithShop();
 
         } catch (error) {
             console.error('Save section error:', error);
@@ -562,7 +562,9 @@ class AdminPanel {
 
     generateProductId() {
         const maxId = this.products.reduce((max, product) => Math.max(max, product.id), 0);
-        return maxId + 1;
+        const newId = maxId + 1;
+        console.log('Generated new product ID:', newId);
+        return newId;
     }
 
     generateSectionId() {
@@ -604,7 +606,7 @@ class AdminPanel {
             this.saveProducts();
             this.renderProducts();
             this.showNotification('Товар удален', 'success');
-            this.notifyProductsUpdate();
+            this.syncWithShop();
             this.productToDelete = null;
         }
         this.closeModal('confirmModal');
@@ -627,7 +629,7 @@ class AdminPanel {
             this.sections = this.sections.filter(s => s.id !== this.sectionToDelete);
             this.saveSections();
             this.renderSections();
-            this.notifySectionsUpdate(); // Уведомляем об обновлении разделов
+            this.syncWithShop();
             this.showNotification('Раздел удален', 'success');
             this.sectionToDelete = null;
         }
@@ -646,30 +648,50 @@ class AdminPanel {
         localStorage.setItem('adminSections', JSON.stringify(this.sections));
     }
 
-    // 🔐 Уведомление об обновлении товаров (для синхронизации с магазином)
-    notifyProductsUpdate() {
-        // Отправляем кастомное событие
-        const event = new CustomEvent('adminProductsUpdated');
-        window.dispatchEvent(event);
-        
-        // Также обновляем localStorage для cross-tab синхронизации
-        localStorage.setItem('adminProducts', JSON.stringify(this.products));
-        
-        console.log('Уведомление об обновлении товаров отправлено');
-        this.showNotification('Изменения синхронизированы с магазином', 'success');
-    }
+    // 🔄 Синхронизация с магазином
+    syncWithShop() {
+        // Сохраняем товары в общее хранилище для магазина
+        const shopProducts = this.products
+            .filter(product => product.active)
+            .map(product => ({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                category: product.category,
+                section: product.section,
+                sku: product.sku,
+                stock: product.stock,
+                description: product.description,
+                features: product.features,
+                specifications: product.specifications,
+                badge: product.badge,
+                featured: product.featured,
+                images: product.images,
+                active: product.active,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt
+            }));
 
-    // 🔐 Уведомление об обновлении разделов
-    notifySectionsUpdate() {
-        // Отправляем кастомное событие
-        const event = new CustomEvent('adminSectionsUpdated');
-        window.dispatchEvent(event);
+        localStorage.setItem('products', JSON.stringify(shopProducts));
         
-        // Также обновляем localStorage для cross-tab синхронизации
-        localStorage.setItem('adminSections', JSON.stringify(this.sections));
-        
-        console.log('Уведомление об обновлении разделов отправлено');
-        this.showNotification('Разделы синхронизированы с магазином', 'success');
+        // Сохраняем разделы
+        const shopSections = this.sections
+            .filter(section => section.active)
+            .map(section => ({
+                id: section.id,
+                name: section.name,
+                code: section.code,
+                product_count: section.product_count
+            }));
+
+        localStorage.setItem('sections', JSON.stringify(shopSections));
+
+        // Отправляем событие обновления данных
+        window.dispatchEvent(new CustomEvent('productsDataUpdated'));
+        window.dispatchEvent(new CustomEvent('sectionsDataUpdated'));
+
+        this.showNotification('Данные синхронизированы с магазином', 'success');
+        console.log('Shop data synchronized:', shopProducts.length, 'products');
     }
 }
 

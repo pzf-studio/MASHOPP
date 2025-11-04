@@ -33,8 +33,8 @@
                 </nav>
                 
                 <div class="header-actions">
-                    <!-- Обновленная иконка корзины -->
-                    <button class="cart-icon minimal outline" id="cartIcon">
+                    <!-- Исправленная иконка корзины -->
+                    <button class="cart-icon" id="cartIcon">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-count" id="cartCount">0</span>
                     </button>
@@ -73,15 +73,11 @@
 
     <section class="catalog" id="catalog">
         <div class="container">
-            <h2 class="section-title">Каталог товаров</h2>
-            <div class="catalog-filters">
-                <button class="filter-btn active" data-filter="all">Все товары</button>
-                <button class="filter-btn" data-filter="pantograph">Пантографы</button>
-                <button class="filter-btn" data-filter="nuomi-hera">Nuomi Hera</button>
-                <button class="filter-btn" data-filter="nuomi-ralphie">Nuomi Ralphie</button>
-                <button class="filter-btn" data-filter="wise">Коллекция Wise</button>
-                <button class="filter-btn" data-filter="time">Коллекция Time</button>
-                <button class="filter-btn" data-filter="kitchen">Кухонные лифты</button>
+            <h2 class="section-title decorative">Каталог товаров</h2>
+            
+            <!-- Навигация по разделам -->
+            <div class="sections-navigation" id="sectionsNavigation">
+                <!-- Разделы будут загружены динамически из админ-панели -->
             </div>
             
             <div class="products-grid" id="productsGrid">
@@ -148,7 +144,6 @@
         </div>
     </footer>
 
-
     <!-- Новая корзина -->
     <div class="cart-overlay" id="cartOverlay">
         <div class="cart-sidebar">
@@ -178,11 +173,11 @@
                         <span class="cart-total-amount" id="cartTotalAmount">0 ₽</span>
                     </div>
                     <div class="cart-actions">
-                        <button class="btn btn-primary btn-checkout" id="checkoutBtn">
+                        <button class="btn-checkout" id="checkoutBtn">
                             <i class="fas fa-paper-plane"></i>
                             Оформить заказ
                         </button>
-                        <button class="btn btn-outline btn-continue" id="continueShoppingBtn">
+                        <button class="btn-continue" id="continueShoppingBtn">
                             Продолжить покупки
                         </button>
                     </div>
@@ -191,9 +186,10 @@
         </div>
     </div>
 
-    <script src="shop.js"></script>
-    <script src="sync.js"></script>
-    <script src="init.js"></script>
     <script src="data-manager.js"></script>
+    <script src="cart-system.js"></script>
+    <script src="shop.js"></script>
+    <!-- <script src="init.js"></script> -->
+    <!-- <script src="sync.js"></script> -->
 </body>
 </html>

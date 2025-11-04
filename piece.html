@@ -18,7 +18,6 @@
                             <img src="./images/logo2.png" alt="MA Furniture" class="logo-image">
                             <div class="logo-text-container">
                                 <span class="logo-text">MA FURNITURE</span>
-                                
                             </div>
                         </div>
                     </a>
@@ -34,10 +33,6 @@
                 </nav>
                 
                 <div class="header-actions">
-                    <button class="cart-btn" id="cartBtn">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="cart-count">0</span>
-                    </button>
                     <a href="https://t.me/Ma_Furniture_ru" class="btn btn-outline btn-telegram">
                         <i class="fab fa-telegram-plane"></i>
                         <span>Telegram</span>
@@ -70,31 +65,10 @@
         </nav>
     </div>
 
-    <!-- Cart Sidebar -->
-    <div class="cart-sidebar" id="cartSidebar">
-        <div class="cart-header">
-            <h3>Корзина</h3>
-            <button class="close-cart" id="closeCart">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="cart-items" id="cartItems">
-            <!-- Cart items will be loaded here -->
-        </div>
-        <div class="cart-footer">
-            <div class="cart-total">
-                <span>Итого:</span>
-                <span id="cartTotal">₽ 0</span>
-            </div>
-            <button class="btn btn-primary btn-checkout">Оформить заказ</button>
-        </div>
-    </div>
-
-    <!-- Main Content -->
     <main class="main-container">
         <div class="container">
             <!-- Breadcrumbs -->
-            <nav class="breadcrumbs">
+            <nav class="breadcrumbs" id="breadcrumbs">
                 <a href="index.html">Главная</a>
                 <span class="separator">/</span>
                 <a href="shop.html">Каталог</a>
@@ -104,7 +78,19 @@
 
             <!-- Product Details -->
             <div class="product-details" id="productDetails">
-                <!-- Product content will be loaded here -->
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-spinner"></div>
+                    <p>Загрузка товара...</p>
+                </div>
+                
+                <div class="error-state" id="errorState" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>Товар не найден</h2>
+                    <p>Возможно, товар был удален или перемещен</p>
+                    <a href="shop.html" class="btn btn-primary">Вернуться в магазин</a>
+                </div>
+                
+                <!-- Сюда будет загружаться контент товара -->
             </div>
 
             <!-- Related Products -->
@@ -196,9 +182,8 @@
         </div>
     </div>
 
-    <script src="piece.js"></script>
-    <script src="sync.js"></script>
-    <script src="init.js"></script>
     <script src="data-manager.js"></script>
+    <script src="piece.js"></script>
+    <script src="cart-system.js"></script>
 </body>
 </html>

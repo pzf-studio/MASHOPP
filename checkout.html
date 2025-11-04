@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оформление заказа - MA Furniture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #8B7355;
+            --primary-dark: #6d5c46;
+            --secondary-color: #333;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #f8f8f8;
+            --border-color: #e0e0e0;
+            --white: #ffffff;
+            --shadow: 0 5px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Palatino', 'Georgia', serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: var(--white);
+            padding-top: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo a {
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            display: block;
+        }
+
+        .logo-subtitle {
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+
+        .main-nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .main-nav a:hover {
+            color: var(--primary-color);
+        }
+
+        .main-nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .main-nav a:hover::after {
+            width: 100%;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: var(--white);
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.4;
+            min-height: 44px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: var(--primary-color);
+            color: var(--white);
+            border: 2px solid var(--primary-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-dark);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            min-height: 36px;
+        }
+
+        /* Checkout Section */
+        .checkout {
+            padding: 60px 0;
+        }
+
+        .checkout-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--text-dark);
+        }
+
+        .checkout-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* Order Summary */
+        .order-summary {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 2rem;
+            position: sticky;
+            top: 100px;
+            box-shadow: var(--shadow);
+        }
+
+        .summary-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .summary-items {
+            margin-bottom: 2rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .item-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-image .image-placeholder {
+            width: 100%;
+            height: 100%;
+            background: var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .item-price {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .item-quantity {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .summary-totals {
+            border-top: 2px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .total-row.final {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        /* Checkout Form */
+        .checkout-form {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .form-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+            background: var(--white);
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-dark);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-back:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-submit {
+            flex: 1;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-submit:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-submit.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-submit.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--border-color);
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: var(--white);
+            border-radius: 5px;
+            box-shadow: var(--shadow);
+            padding: 1rem 1.5rem;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1400;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left-color: #27ae60;
+        }
+
+        .notification.error {
+            border-left-color: #e74c3c;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification.success .notification-content i {
+            color: #27ae60;
+        }
+
+        .notification.error .notification-content i {
+            color: #e74c3c;
+        }
+
+        /* Footer */
+        .main-footer {
+            background: var(--secondary-color);
+            color: var(--white);
+            padding: 60px 0 20px;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3, .footer-section h4 {
+            margin-bottom: 20px;
+            color: #f8f8f8;
+            font-family: 'Playfair Display', serif;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .footer-section p {
+            line-height: 1.6;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        .footer-section a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            line-height: 1.4;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary-color);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .logo-text-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            display: block;
+            line-height: 1;
+            text-align: left;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .checkout-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .order-summary {
+                position: static;
+                order: 2;
+            }
+            
+            .checkout-form {
+                order: 1;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                padding: 1rem 0;
+            }
+            
+            .main-nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .checkout {
+                padding: 40px 0;
+            }
+            
+            .checkout-title {
+                font-size: 2rem;
+            }
+            
+            .order-summary,
+            .checkout-form {
+                padding: 1.5rem;
+            }
+            
+            .summary-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .item-info {
+                width: 100%;
+            }
+            
+            .item-total {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">
+                        <div class="logo-container">
+                            <img src="./images/logo2.png" alt="MA Furniture" class="logo-image">
+                            <div class="logo-text-container">
+                                <span class="logo-text">MA FURNITURE</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html">Главная</a></li>
+                        <li><a href="shop.html">Каталог</a></li>
+                        <li><a href="index.html#about">О компании</a></li>
+                        <li><a href="index.html#faq">FAQ</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="header-actions">
+                    <a href="https://t.me/Ma_Furniture_ru" class="btn btn-outline btn-telegram">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span>Telegram</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Checkout Section -->
+    <section class="checkout">
+        <div class="container">
+            <h1 class="checkout-title">Оформление заказа</h1>
+            
+            <div class="checkout-content">
+                <!-- Order Form -->
+                <div class="checkout-form">
+                    <h2 class="form-title">Данные для заказа</h2>
+                    <form id="orderForm">
+                        <div class="form-group">
+                            <label for="customerName" class="form-label">ФИО *</label>
+                            <input type="text" id="customerName" class="form-input" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerEmail" class="form-label">Email *</label>
+                            <input type="email" id="customerEmail" class="form-input" required placeholder="example@mail.ru">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerPhone" class="form-label">Номер телефона *</label>
+                            <input type="tel" id="customerPhone" class="form-input" required placeholder="+7 (900) 123-45-67">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="preferredMessenger" class="form-label">Предпочитаемый мессенджер</label>
+                            <select id="preferredMessenger" class="form-select">
+                                <option value="telegram">Telegram</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="viber">Viber</option>
+                                <option value="phone">Телефонный звонок</option>
+                                <option value="email">Email</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="orderComment" class="form-label">Комментарий к заказу</label>
+                            <textarea id="orderComment" class="form-textarea" placeholder="Ваши пожелания или дополнительная информация..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <a href="shop.html" class="btn btn-back">
+                                <i class="fas fa-arrow-left"></i>
+                                Вернуться в магазин
+                            </a>
+                            <button type="submit" class="btn btn-submit" id="submitOrder">
+                                <i class="fas fa-paper-plane"></i>
+                                Оформить заказ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <h2 class="summary-title">Ваш заказ</h2>
+                    
+                    <div class="summary-items" id="orderItems">
+                        <!-- Items will be loaded here -->
+                    </div>
+                    
+                    <div class="summary-totals">
+                        <div class="total-row">
+                            <span>Товары:</span>
+                            <span id="subtotalAmount">0 ₽</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Доставка:</span>
+                            <span>Рассчитывается менеджером</span>
+                        </div>
+                        <div class="total-row final">
+                            <span>Итого:</span>
+                            <span id="totalAmount">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>MA Furniture</h3>
+                    <p>Эксклюзивные гардеробные системы премиум-класса с итальянским дизайном и немецкой точностью.</p>
+                    <div class="social-links">
+                        <a href="https://t.me/Ma_Furniture_ru" aria-label="Telegram">
+                            <i class="fab fa-telegram-plane"></i>
+                        </a>
+                        <a href="#" aria-label="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" aria-label="WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Навигация</h4>
+                    <ul>
+                        <li><a href="index.html">Главная</a></li>
+                        <li><a href="index.html#about">О компании</a></li>
+                        <li><a href="shop.html">Магазин</a></li>
+                        <li><a href="index.html#faq">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Категории</h4>
+                    <ul>
+                        <li><a href="shop.html?category=pantograph">Пантографы</a></li>
+                        <li><a href="shop.html?category=wardrobe">Гардеробные системы</a></li>
+                        <li><a href="shop.html?category=premium">Премиум коллекция</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Контакты</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> +7 (910) 005-34-24</li>
+                        <li><i class="fas fa-envelope"></i> ma.furniture@mail.ru</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Москва, Россия</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2023 MA Furniture. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        class CheckoutSystem {
+            constructor() {
+                this.cart = this.loadCart();
+                this.init();
+            }
+
+            init() {
+                this.renderOrderSummary();
+                this.setupEventListeners();
+                this.setupCartSync();
+            }
+
+            // Метод: Загрузка корзины с синхронизацией
+            loadCart() {
+                // Пробуем получить данные через глобальную функцию
+                if (typeof getCartData === 'function') {
+                    return getCartData();
+                }
+                // Или читаем напрямую из localStorage
+                try {
+                    return JSON.parse(localStorage.getItem('ma_furniture_cart')) || [];
+                } catch (error) {
+                    console.error('Error loading cart:', error);
+                    return [];
+                }
+            }
+
+            // Метод: Настройка синхронизации корзины
+            setupCartSync() {
+                // Слушаем события обновления корзины
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'ma_furniture_cart') {
+                        console.log('Обнаружено изменение корзины в localStorage');
+                        this.cart = this.loadCart();
+                        this.renderOrderSummary();
+                    }
+                });
+
+                // Также слушаем кастомные события
+                window.addEventListener('cartUpdated', (e) => {
+                    console.log('Получено событие обновления корзины');
+                    this.cart = (e.detail && e.detail.cart) ? e.detail.cart : this.loadCart();
+                    this.renderOrderSummary();
+                });
+
+                // Принудительная синхронизация при загрузке
+                setTimeout(() => {
+                    this.cart = this.loadCart();
+                    this.renderOrderSummary();
+                }, 100);
+            }
+
+            renderOrderSummary() {
+                const itemsContainer = document.getElementById('orderItems');
+                const subtotalElement = document.getElementById('subtotalAmount');
+                const totalElement = document.getElementById('totalAmount');
+                const submitBtn = document.getElementById('submitOrder');
+
+                if (!itemsContainer || !subtotalElement || !totalElement) {
+                    console.error('Required elements not found');
+                    return;
+                }
+
+                if (this.cart.length === 0) {
+                    itemsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-shopping-cart"></i>
+                            <h3>Корзина пуста</h3>
+                            <p>Добавьте товары из каталога</p>
+                            <a href="shop.html" class="btn btn-primary">Перейти в магазин</a>
+                        </div>
+                    `;
+                    subtotalElement.textContent = '0 ₽';
+                    totalElement.textContent = '0 ₽';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                    return;
+                }
+
+                itemsContainer.innerHTML = this.cart.map(item => `
+                    <div class="summary-item">
+                        <div class="item-info">
+                            <div class="item-image">
+                                ${item.image ? 
+                                    `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                                    '<div class="image-placeholder"><i class="fas fa-couch"></i></div>'
+                                }
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-price">${this.formatPrice(item.price)}</div>
+                                <div class="item-quantity">Количество: ${item.quantity}</div>
+                            </div>
+                        </div>
+                        <div class="item-total">${this.formatPrice(item.price * item.quantity)}</div>
+                    </div>
+                `).join('');
+
+                const subtotal = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                subtotalElement.textContent = this.formatPrice(subtotal);
+                totalElement.textContent = this.formatPrice(subtotal);
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('orderForm');
+                const submitBtn = document.getElementById('submitOrder');
+
+                if (!form || !submitBtn) {
+                    console.error('Form or submit button not found');
+                    return;
+                }
+
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitOrder();
+                });
+
+                // Валидация формы
+                form.addEventListener('input', () => {
+                    const isValid = form.checkValidity();
+                    const hasItems = this.cart.length > 0;
+                    submitBtn.disabled = !isValid || !hasItems;
+                });
+
+                // Изначальная проверка
+                submitBtn.disabled = this.cart.length === 0;
+            }
+
+            async submitOrder() {
+                const submitBtn = document.getElementById('submitOrder');
+                if (!submitBtn) {
+                    console.error('Submit button not found');
+                    return;
+                }
+
+                const originalText = submitBtn.innerHTML;
+                
+                // Показываем индикатор загрузки
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+
+                try {
+                    // Собираем данные формы
+                    const formData = {
+                        name: document.getElementById('customerName').value,
+                        email: document.getElementById('customerEmail').value,
+                        phone: document.getElementById('customerPhone').value,
+                        messenger: document.getElementById('preferredMessenger').value,
+                        comment: document.getElementById('orderComment').value,
+                        items: this.cart,
+                        total: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                        timestamp: new Date().toLocaleString('ru-RU')
+                    };
+
+                    // Формируем сообщение для Telegram
+                    const message = this.formatTelegramMessage(formData);
+                    
+                    // Кодируем сообщение для URL
+                    const encodedMessage = encodeURIComponent(message);
+                    
+                    // Открываем Telegram с предзаполненным сообщением
+                    const telegramUrl = `https://t.me/Ma_Furniture_ru?text=${encodedMessage}`;
+                    
+                    // Даем время для анимации загрузки
+                    setTimeout(() => {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.innerHTML = originalText;
+                        
+                        // Показываем уведомление об успехе
+                        this.showNotification('Заказ успешно оформлен! Открываем Telegram...', 'success');
+                        
+                        // Очищаем корзину
+                        this.clearCart();
+                        
+                        // Открываем Telegram
+                        window.open(telegramUrl, '_blank');
+                        
+                        // Перенаправляем на главную через 3 секунды
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 3000);
+                        
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Order submission error:', error);
+                    if (submitBtn) {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                    
+                    this.showNotification('Ошибка при оформлении заказа. Попробуйте еще раз.', 'error');
+                }
+            }
+
+            // Метод: Очистка корзины
+            clearCart() {
+                // Используем глобальную функцию если доступна
+                if (typeof clearCart === 'function') {
+                    clearCart();
+                } else {
+                    // Или очищаем напрямую
+                    try {
+                        localStorage.removeItem('ma_furniture_cart');
+                    } catch (error) {
+                        console.error('Error clearing cart:', error);
+                    }
+                }
+                this.cart = [];
+            }
+
+            formatTelegramMessage(formData) {
+                const messengerNames = {
+                    'telegram': 'Telegram',
+                    'whatsapp': 'WhatsApp', 
+                    'viber': 'Viber',
+                    'phone': 'Телефонный звонок',
+                    'email': 'Email'
+                };
+
+                let message = '🛒 НОВЫЙ ЗАКАЗ MA FURNITURE\n\n';
+                message += '📅 ' + formData.timestamp + '\n\n';
+                
+                message += '👤 КЛИЕНТ:\n';
+                message += '• ФИО: ' + formData.name + '\n';
+                message += '• Email: ' + formData.email + '\n';
+                message += '• Телефон: ' + formData.phone + '\n';
+                message += '• Предпочтительный способ связи: ' + (messengerNames[formData.messenger] || formData.messenger) + '\n\n';
+                
+                if (formData.comment) {
+                    message += '💬 КОММЕНТАРИЙ КЛИЕНТА:\n' + formData.comment + '\n\n';
+                }
+                
+                message += '🛍️ СОСТАВ ЗАКАЗА:\n';
+                formData.items.forEach((item, index) => {
+                    message += (index + 1) + '. ' + item.name + '\n';
+                    message += '   Кол-во: ' + item.quantity + ' шт.\n';
+                    message += '   Цена: ' + this.formatPrice(item.price) + ' × ' + item.quantity + ' = ' + this.formatPrice(item.price * item.quantity) + '\n\n';
+                });
+                
+                message += '💰 ИТОГО: ' + this.formatPrice(formData.total) + '\n\n';
+                message += '📍 ДОСТАВКА: рассчитывается менеджером\n\n';
+                message += '⚡ Заказ требует оперативной обработки!';
+
+                return message;
+            }
+
+            formatPrice(price) {
+                return new Intl.NumberFormat('ru-RU', {
+                    style: 'currency',
+                    currency: 'RUB',
+                    minimumFractionDigits: 0
+                }).format(price);
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + type;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                        ${message}
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // Инициализация системы оформления заказа
+        document.addEventListener('DOMContentLoaded', () => {
+            new CheckoutSystem();
+        });
+    </script>
+</body>
+</html>
