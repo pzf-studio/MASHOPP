@@ -1,4 +1,4 @@
-// data-manager.js - Менеджер данных для магазина
+// data-manager.js - Менеджер данных для магазина с поддержкой ImageManager
 class DataManager {
     constructor() {
         this.categories = {
@@ -13,6 +13,7 @@ class DataManager {
     init() {
         this.setupEventListeners();
         this.loadInitialData();
+        this.restoreImagesFromManager();
     }
 
     setupEventListeners() {
@@ -34,36 +35,41 @@ class DataManager {
     }
 
     initializeSampleData() {
-        const sampleProducts = [
-            {
-                id: 1,
-                name: 'Пантограф Премиум',
-                price: 45000,
-                category: 'pantograph',
-                section: 'classic',
-                description: 'Эксклюзивный пантограф для гардеробной системы',
-                badge: 'Новинка',
-                active: true,
-                featured: true,
-                stock: 5,
-                images: ['images/products/pantograph1.jpg'],
-                features: ['Высококачественные материалы', 'Плавный ход', 'Надежная конструкция'],
-                specifications: {
-                    'Материал': 'Массив дерева',
-                    'Размеры': '200x90x45 см',
-                    'Вес': '35 кг'
-                }
-            }
-        ];
+        // УБИРАЕМ пример товара с несуществующей фотографией
+        // Вместо этого создаем пустой массив
+        const sampleProducts = [];
 
         const sampleSections = [
-            { id: 1, name: 'Классические', code: 'classic', product_count: 1, active: true },
+            { id: 1, name: 'Классические', code: 'classic', product_count: 0, active: true },
             { id: 2, name: 'Современные', code: 'modern', product_count: 0, active: true },
             { id: 3, name: 'Премиум', code: 'premium', product_count: 0, active: true }
         ];
 
         localStorage.setItem('products', JSON.stringify(sampleProducts));
         localStorage.setItem('sections', JSON.stringify(sampleSections));
+    }
+
+    // НОВЫЙ МЕТОД: Восстановление изображений из ImageManager
+    restoreImagesFromManager() {
+        if (!window.imageManager) return;
+        
+        const products = this.getProducts();
+        let restoredCount = 0;
+        
+        products.forEach(product => {
+            if (product.sku && (!product.images || product.images.length === 0)) {
+                const restoredImages = window.imageManager.getProductImages(product);
+                if (restoredImages.length > 0) {
+                    product.images = restoredImages;
+                    restoredCount++;
+                }
+            }
+        });
+
+        if (restoredCount > 0) {
+            this.updateProducts(products);
+            console.log(`DataManager: Restored images for ${restoredCount} products from ImageManager`);
+        }
     }
 
     // Получение товаров с фильтрацией
@@ -119,10 +125,23 @@ class DataManager {
         return this.categories;
     }
 
-    // Получение товара по ID
+    // ОБНОВЛЕННЫЙ МЕТОД: Получение товара по ID
     getProductById(id) {
         const products = this.getProducts();
-        return products.find(product => product.id === id);
+        const product = products.find(product => product.id === id);
+        
+        // Если у товара нет изображений, пробуем восстановить из ImageManager
+        if (product && product.sku && (!product.images || product.images.length === 0)) {
+            if (window.imageManager) {
+                const restoredImages = window.imageManager.getProductImages(product);
+                if (restoredImages.length > 0) {
+                    product.images = restoredImages;
+                    console.log('DataManager: Restored images for product:', product.sku);
+                }
+            }
+        }
+        
+        return product;
     }
 
     // Получение рекомендуемых товаров
@@ -155,8 +174,8 @@ class DataManager {
         
         return products.filter(product => 
             product.name.toLowerCase().includes(lowerQuery) ||
-            product.description.toLowerCase().includes(lowerQuery) ||
-            product.category.toLowerCase().includes(lowerQuery)
+            product.description?.toLowerCase().includes(lowerQuery) ||
+            product.category?.toLowerCase().includes(lowerQuery)
         );
     }
 

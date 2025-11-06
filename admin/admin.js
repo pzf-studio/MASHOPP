@@ -1,4 +1,4 @@
-// admin.js - Основная логика админ-панели MA Furniture
+// admin.js - Основная логика админ-панели MA Furniture с поддержкой ImageManager
 class AdminPanel {
     constructor() {
         // 🔐 Проверка авторизации
@@ -20,7 +20,7 @@ class AdminPanel {
         this.renderProducts();
         this.renderSections();
         this.hideLoading();
-        console.log('Admin panel initialized');
+        console.log('Admin panel initialized with ImageManager support');
     }
 
     hideLoading() {
@@ -172,6 +172,11 @@ class AdminPanel {
                 this.saveSections();
             }
 
+            // 🔥 ВОССТАНОВЛЕНИЕ ИЗОБРАЖЕНИЙ ДЛЯ СУЩЕСТВУЮЩИХ ТОВАРОВ
+            if (window.imageManager) {
+                this.restoreProductImages();
+            }
+
             this.renderProducts();
             this.renderSections();
             
@@ -180,6 +185,27 @@ class AdminPanel {
         } catch (error) {
             console.error('Load data error:', error);
             this.showNotification('Ошибка загрузки данных', 'error');
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Восстановление изображений для существующих товаров
+    restoreProductImages() {
+        let restoredCount = 0;
+        
+        this.products.forEach(product => {
+            if (product.sku && (!product.images || product.images.length === 0)) {
+                const restoredImages = window.imageManager.getProductImages(product);
+                if (restoredImages.length > 0) {
+                    product.images = restoredImages;
+                    restoredCount++;
+                    console.log('Restored images for product:', product.sku);
+                }
+            }
+        });
+
+        if (restoredCount > 0) {
+            this.saveProducts();
+            console.log(`Restored images for ${restoredCount} products`);
         }
     }
 
@@ -442,13 +468,20 @@ class AdminPanel {
             const formData = new FormData(document.getElementById('productForm'));
             const images = this.getCurrentImages();
             
+            // Автоматически генерируем SKU если не заполнен
+            let sku = document.getElementById('productSku').value.trim();
+            if (!sku) {
+                sku = this.generateSKU(document.getElementById('productName').value);
+                document.getElementById('productSku').value = sku;
+            }
+
             const productData = {
                 id: this.currentProductId || this.generateProductId(),
                 name: document.getElementById('productName').value,
                 price: parseInt(document.getElementById('productPrice').value),
                 category: document.getElementById('productCategory').value,
                 section: document.getElementById('productSection').value,
-                sku: document.getElementById('productSku').value,
+                sku: sku, // Обязательно сохраняем SKU
                 stock: parseInt(document.getElementById('productStock').value) || 0,
                 description: document.getElementById('productDescription').value,
                 features: this.parseFeatures(document.getElementById('productFeatures').value),
@@ -463,6 +496,18 @@ class AdminPanel {
             if (!productData.name || !productData.price || !productData.category || !productData.section) {
                 this.showNotification('Заполните все обязательные поля', 'error');
                 return;
+            }
+
+            // 🔥 СОХРАНЕНИЕ ИЗОБРАЖЕНИЙ В IMAGE MANAGER
+            if (productData.sku && productData.images && productData.images.length > 0) {
+                if (window.imageManager) {
+                    const saved = window.imageManager.saveProductImages(productData);
+                    if (saved) {
+                        console.log('Images saved to ImageManager for SKU:', productData.sku);
+                    } else {
+                        console.warn('Failed to save images to ImageManager for SKU:', productData.sku);
+                    }
+                }
             }
 
             if (this.currentProductId) {
@@ -489,6 +534,18 @@ class AdminPanel {
             console.error('Save product error:', error);
             this.showNotification('Ошибка сохранения товара', 'error');
         }
+    }
+
+    // НОВЫЙ МЕТОД: Генерация SKU
+    generateSKU(productName) {
+        const timestamp = Date.now().toString().slice(-6);
+        const namePart = productName
+            .toLowerCase()
+            .replace(/[^a-z0-9а-яё]/g, '')
+            .slice(0, 3)
+            .toUpperCase();
+        
+        return `MF${namePart}${timestamp}`;
     }
 
     saveSection() {
@@ -648,7 +705,7 @@ class AdminPanel {
         localStorage.setItem('adminSections', JSON.stringify(this.sections));
     }
 
-    // 🔄 Синхронизация с магазином
+    // ОБНОВЛЕННЫЙ МЕТОД: Синхронизация с магазином
     syncWithShop() {
         // Сохраняем товары в общее хранилище для магазина
         const shopProducts = this.products
@@ -659,7 +716,7 @@ class AdminPanel {
                 price: product.price,
                 category: product.category,
                 section: product.section,
-                sku: product.sku,
+                sku: product.sku, // Важно: передаем SKU в магазин
                 stock: product.stock,
                 description: product.description,
                 features: product.features,
@@ -685,6 +742,12 @@ class AdminPanel {
             }));
 
         localStorage.setItem('sections', JSON.stringify(shopSections));
+
+        // 🔥 ОЧИСТКА НЕИСПОЛЬЗУЕМЫХ ИЗОБРАЖЕНИЙ
+        if (window.imageManager) {
+            const usedSkus = shopProducts.map(p => p.sku).filter(sku => sku);
+            window.imageManager.cleanupUnusedImages(usedSkus);
+        }
 
         // Отправляем событие обновления данных
         window.dispatchEvent(new CustomEvent('productsDataUpdated'));

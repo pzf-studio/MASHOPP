@@ -16,11 +16,61 @@ class CartSystem {
     loadCart() {
         try {
             const cartData = localStorage.getItem(this.storageKey);
-            return cartData ? JSON.parse(cartData) : [];
+            let cart = cartData ? JSON.parse(cartData) : [];
+            
+            // Восстанавливаем изображения после загрузки
+            cart = this.restoreCartImages(cart);
+            
+            console.log('Cart loaded:', cart.length, 'items');
+            return cart;
         } catch (error) {
             console.error('Error loading cart from localStorage:', error);
             return [];
         }
+    }
+
+    // ОБНОВЛЕННЫЙ МЕТОД: Восстановление изображений в корзине
+    restoreCartImages(cart) {
+        return cart.map(item => {
+            let imageUrl = item.image;
+            
+            // Если это ссылка на imageManager, восстанавливаем изображение
+            if (imageUrl && imageUrl.startsWith('image://')) {
+                const imageKey = imageUrl.replace('image://', '');
+                if (window.imageManager) {
+                    const restoredImage = window.imageManager.getImage(imageKey);
+                    if (restoredImage) {
+                        console.log('Restored image from ImageManager for item:', item.id);
+                        return {
+                            ...item,
+                            image: restoredImage
+                        };
+                    }
+                }
+                
+                // Если не удалось восстановить из imageManager, пробуем из оригинального товара
+                const originalProduct = window.dataManager?.getProductById(item.id);
+                if (originalProduct) {
+                    const productImage = window.imageManager?.getProductFirstImage(originalProduct) || 
+                                       (originalProduct.images && originalProduct.images.length > 0 ? originalProduct.images[0] : null);
+                    if (productImage) {
+                        console.log('Restored image from product data for item:', item.id);
+                        return {
+                            ...item,
+                            image: productImage
+                        };
+                    }
+                }
+                
+                console.warn('Could not restore image for item:', item.id);
+                return {
+                    ...item,
+                    image: null
+                };
+            }
+            
+            return item;
+        });
     }
 
     setupEventListeners() {
@@ -36,9 +86,6 @@ class CartSystem {
         document.getElementById('cartOverlay')?.addEventListener('click', (e) => {
             if (e.target.id === 'cartOverlay') this.closeCart();
         });
-
-        // УДАЛЕНО: Делегирование событий для кнопок добавления в корзину
-        // Теперь этим занимается только shop.js
     }
 
     setupStorageListener() {
@@ -59,18 +106,21 @@ class CartSystem {
         });
     }
 
-    // НОВЫЙ МЕТОД: Публичный метод для добавления товара
+    // ОБНОВЛЕННЫЙ МЕТОД: Публичный метод для добавления товара
     addProduct(product) {
         const existingItem = this.cart.find(item => item.id === product.id);
         
         if (existingItem) {
             existingItem.quantity += 1;
         } else {
+            // Получаем оптимальное изображение для корзины
+            const cartImage = this.getOptimalImageForCart(product);
+            
             this.cart.push({
                 id: product.id,
                 name: product.name,
                 price: product.price,
-                image: product.image,
+                image: cartImage, // Используем оптимизированное изображение
                 quantity: 1
             });
         }
@@ -78,6 +128,28 @@ class CartSystem {
         this.saveCart();
         this.updateCartDisplay();
         this.showNotification(`"${product.name}" добавлен в корзину`);
+    }
+
+    // НОВЫЙ МЕТОД: Получение оптимального изображения для корзины
+    getOptimalImageForCart(product) {
+        if (!product.images || !product.images.length) {
+            console.log('No images for product:', product.id);
+            return null;
+        }
+        
+        // Пытаемся получить изображение из ImageManager
+        if (product.sku && window.imageManager) {
+            const optimizedImage = window.imageManager.getProductFirstImage(product);
+            if (optimizedImage) {
+                console.log('Using optimized image from ImageManager for product:', product.id);
+                return optimizedImage;
+            }
+        }
+        
+        // Используем первое изображение товара
+        const firstImage = product.images[0];
+        console.log('Using original image for product:', product.id);
+        return firstImage;
     }
 
     // НОВЫЙ МЕТОД: Публичный метод с анимацией
@@ -94,8 +166,6 @@ class CartSystem {
             this.addProduct(product);
         }
     }
-
-    // УДАЛЕН: метод addProductFromButton - теперь используется addProductWithAnimation
 
     parsePrice(priceText) {
         if (!priceText) return 0;
@@ -159,7 +229,7 @@ class CartSystem {
         this.animateCartTotal();
     }
 
-    // ОБНОВЛЕННЫЙ МЕТОД: Сохранение с обработкой ошибок
+    // ОБНОВЛЕННЫЙ МЕТОД: Сохранение корзины
     saveCart() {
         try {
             // Ограничиваем размер корзины
@@ -168,18 +238,18 @@ class CartSystem {
                 this.showNotification('Корзина ограничена 50 товарами', 'warning');
             }
 
-            // Очищаем данные от лишней информации для экономии места
+            // Сохраняем только ссылки на изображения, не сами изображения
             const compactCart = this.cart.map(item => ({
                 id: item.id,
                 name: item.name,
                 price: item.price,
-                image: item.image ? item.image.substring(0, 100) : null, // ограничиваем длину URL
+                image: this.processImageForStorage(item), // Обрабатываем изображение для хранения
                 quantity: item.quantity
             }));
 
             localStorage.setItem(this.storageKey, JSON.stringify(compactCart));
             
-            // Дополнительно отправляем событие для синхронизации между вкладками
+            // Отправляем событие обновления
             window.dispatchEvent(new CustomEvent('cartUpdated', {
                 detail: { 
                     cart: this.cart,
@@ -187,35 +257,43 @@ class CartSystem {
                 }
             }));
             
+            console.log('Cart saved successfully');
             return true;
         } catch (error) {
             console.error('Error saving cart to localStorage:', error);
-            this.showNotification('Ошибка сохранения корзины. Данные могут быть потеряны.', 'error');
-            
-            // Пробуем очистить localStorage и сохранить снова
-            if (error.name === 'QuotaExceededError') {
-                this.clearStorageAndRetry();
-            }
+            this.showNotification('Ошибка сохранения корзины', 'error');
             return false;
         }
     }
 
-    // НОВЫЙ МЕТОД: Очистка хранилища при переполнении
-    clearStorageAndRetry() {
-        try {
-            // Сохраняем только корзину, удаляем всё остальное
-            const cartData = localStorage.getItem(this.storageKey);
-            localStorage.clear();
-            
-            if (cartData) {
-                localStorage.setItem(this.storageKey, cartData);
-            }
-            
-            this.showNotification('Память очищена. Попробуйте снова.', 'warning');
-        } catch (clearError) {
-            console.error('Error clearing localStorage:', clearError);
-            this.showNotification('Критическая ошибка памяти. Перезагрузите страницу.', 'error');
+    // НОВЫЙ МЕТОД: Обработка изображения для хранения
+    processImageForStorage(item) {
+        if (!item.image) {
+            console.log('No image to process for item:', item.id);
+            return null;
         }
+        
+        // Если изображение уже является ссылкой (не base64), сохраняем как есть
+        if (typeof item.image === 'string' && !item.image.startsWith('data:image/')) {
+            console.log('Image is already a reference for item:', item.id);
+            return item.image;
+        }
+        
+        // Для base64 изображений создаем ссылку на imageManager
+        if (item.image && item.image.startsWith('data:image/')) {
+            // Получаем SKU товара для создания ссылки
+            const product = window.dataManager?.getProductById(item.id);
+            if (product && product.sku) {
+                // Создаем ссылку на изображение в imageManager
+                const imageReference = `image://${product.sku}_0`;
+                console.log('Created image reference for item:', item.id, imageReference);
+                return imageReference;
+            } else {
+                console.warn('No SKU found for product, cannot create image reference:', item.id);
+            }
+        }
+        
+        return null;
     }
 
     // НОВЫЙ МЕТОД: Принудительная синхронизация с localStorage
@@ -303,35 +381,55 @@ class CartSystem {
         this.updateCartTotal();
     }
 
+    // ОБНОВЛЕННЫЙ МЕТОД: Генерация HTML для товаров в корзине
     generateCartItemsHTML() {
-        return this.cart.map(item => `
-            <div class="cart-item" data-id="${item.id}">
-                <div class="cart-item-image">
-                    ${item.image && item.image.length > 10 ? 
-                        `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling?.style.display='flex';">` : 
-                        '<div class="image-placeholder"><i class="fas fa-couch"></i></div>'
-                    }
-                </div>
-                <div class="cart-item-details">
-                    <h4 class="cart-item-name">${item.name}</h4>
-                    <div class="cart-item-price">${this.formatPrice(item.price)}</div>
-                    <div class="cart-item-actions">
-                        <div class="quantity-controls">
-                            <button class="quantity-btn" onclick="cartSystem.updateProductQuantity(${item.id}, -1)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="99" readonly>
-                            <button class="quantity-btn" onclick="cartSystem.updateProductQuantity(${item.id}, 1)">
-                                <i class="fas fa-plus"></i>
+        return this.cart.map(item => {
+            // Определяем URL изображения с fallback
+            let imageUrl = item.image;
+            let hasValidImage = false;
+            
+            // Проверяем, является ли изображение валидным URL
+            if (imageUrl && imageUrl.length > 10) {
+                // Проверяем базовые признаки валидного URL
+                if (imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('./') || imageUrl.includes('images/') || imageUrl.startsWith('data:image/')) {
+                    hasValidImage = true;
+                }
+            }
+            
+            return `
+                <div class="cart-item" data-id="${item.id}">
+                    <div class="cart-item-image">
+                        ${hasValidImage ? 
+                            `<img src="${imageUrl}" alt="${item.name}" 
+                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                  onload="this.style.display='block'; this.nextElementSibling.style.display='none';">` : 
+                            ''
+                        }
+                        <div class="image-placeholder" style="${hasValidImage ? 'display:none' : 'display:flex'}">
+                            <i class="fas fa-couch"></i>
+                        </div>
+                    </div>
+                    <div class="cart-item-details">
+                        <h4 class="cart-item-name">${item.name}</h4>
+                        <div class="cart-item-price">${this.formatPrice(item.price)}</div>
+                        <div class="cart-item-actions">
+                            <div class="quantity-controls">
+                                <button class="quantity-btn" onclick="cartSystem.updateProductQuantity(${item.id}, -1)">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="99" readonly>
+                                <button class="quantity-btn" onclick="cartSystem.updateProductQuantity(${item.id}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <button class="remove-item" onclick="cartSystem.removeProduct(${item.id})">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <button class="remove-item" onclick="cartSystem.removeProduct(${item.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     updateCartTotal() {
@@ -546,7 +644,7 @@ window.syncCart = function() {
     }
 };
 
-// НОВАЯ ГЛОБАЛЬНАЯ ФУНКЦИЯ: Добавление товара с анимацией
+// ОБНОВЛЕННАЯ ГЛОБАЛЬНАЯ ФУНКЦИЯ: Добавление товара с анимацией
 window.addToCartWithAnimation = function(productId, button) {
     if (window.cartSystem) {
         const product = window.dataManager?.getProductById(productId);

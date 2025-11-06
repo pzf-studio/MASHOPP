@@ -95,7 +95,7 @@ class ShopApp {
         if (typeof window.addToCartWithAnimation === 'function') {
             window.addToCartWithAnimation(productId, button);
         } else if (window.cartSystem) {
-            // Fallback: используем cartSystem напрямую
+            // CartSystem сам выберет оптимальное изображение
             const productData = {
                 id: product.id,
                 name: product.name,
@@ -104,12 +104,11 @@ class ShopApp {
             };
             window.cartSystem.addProductWithAnimation(productData, button);
         } else {
-            // Ultimate fallback: прямое добавление
             this.addProductDirectly(product, button);
         }
     }
 
-    // НОВЫЙ МЕТОД: Прямое добавление в корзину (fallback)
+    // ОБНОВЛЕННЫЙ МЕТОД: Прямое добавление в корзину
     addProductDirectly(product, button = null) {
         try {
             if (button) {
@@ -124,11 +123,19 @@ class ShopApp {
             if (existingItem) {
                 existingItem.quantity += 1;
             } else {
+                // Получаем оптимальное изображение для корзины
+                let imageUrl = null;
+                if (window.imageManager) {
+                    imageUrl = window.imageManager.getProductFirstImage(product);
+                } else {
+                    imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
+                }
+                
                 cart.push({
                     id: product.id,
                     name: product.name,
                     price: product.price,
-                    image: product.images && product.images.length > 0 ? product.images[0] : null,
+                    image: imageUrl,
                     quantity: 1
                 });
             }
@@ -327,7 +334,7 @@ class ShopApp {
 
     getProductCardHTML(product) {
         const imageUrl = product.images && product.images.length > 0 ? 
-            product.images[0] : 'images/placeholder.jpg';
+            product.images[0] : '';
         
         const badgeHTML = product.badge ? `<div class="product-badge">${product.badge}</div>` : '';
         const outOfStock = (product.stock || 0) <= 0;
@@ -370,7 +377,7 @@ class ShopApp {
         return `
             <div class="product-card ${outOfStock ? 'out-of-stock' : ''}" data-product-id="${product.id}">
                 <div class="product-image">
-                    <img src="${imageUrl}" alt="${product.name}" loading="lazy">
+                    ${imageUrl ? `<img src="${imageUrl}" alt="${product.name}" loading="lazy">` : '<div class="no-image-placeholder"><i class="fas fa-couch"></i></div>'}
                     ${badgeHTML}
                     ${outOfStock ? '<div class="out-of-stock-label">Нет в наличии</div>' : ''}
                 </div>
