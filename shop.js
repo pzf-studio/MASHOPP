@@ -259,7 +259,6 @@ class ShopApp {
             return `
                 <a href="#" class="section-filter-btn ${isActive ? 'active' : ''}" 
                    data-section="${section.code}" onclick="shopApp.filterBySection(event, '${section.code}')">
-                    <i class="fas ${this.getSectionIcon(section.code)}"></i>
                     <span>${section.name}</span>
                     <span class="item-count">${itemCount}</span>
                 </a>
@@ -267,18 +266,6 @@ class ShopApp {
         }).join('');
 
         container.innerHTML = allItemsHTML + sectionsHTML;
-    }
-
-    getSectionIcon(sectionCode) {
-        const icons = {
-            'classic': 'fa-couch',
-            'modern': 'fa-star',
-            'premium': 'fa-crown',
-            'wardrobe': 'fa-archive',
-            'pantograph': 'fa-arrows-alt-v',
-            'kitchen': 'fa-utensils'
-        };
-        return icons[sectionCode] || 'fa-cube';
     }
 
     filterBySection(event, sectionCode) {

@@ -765,7 +765,6 @@
                             <select id="preferredMessenger" class="form-select">
                                 <option value="telegram">Telegram</option>
                                 <option value="whatsapp">WhatsApp</option>
-                                <option value="viber">Viber</option>
                                 <option value="phone">Телефонный звонок</option>
                                 <option value="email">Email</option>
                             </select>
@@ -952,15 +951,10 @@
                     return;
                 }
 
+                // Упрощенный HTML без изображений
                 itemsContainer.innerHTML = this.cart.map(item => `
                     <div class="summary-item">
                         <div class="item-info">
-                            <div class="item-image">
-                                ${item.image ? 
-                                    `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-                                    '<div class="image-placeholder"><i class="fas fa-couch"></i></div>'
-                                }
-                            </div>
                             <div class="item-details">
                                 <div class="item-name">${item.name}</div>
                                 <div class="item-price">${this.formatPrice(item.price)}</div>
