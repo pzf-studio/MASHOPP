@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель с Базой Данных - MA Furniture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin-db.css">
+    <script src="admin-auth.js"></script>
+</head>
+<body>
+
+    <div id="pageLoading" class="page-loading">
+        <div style="text-align: center;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+            <p>Загрузка админ-панели с Базой Данных...</p>
+        </div>
+    </div>
+
+    <main class="main-container">
+        <div class="container">
+            <div class="admin-panel">
+                <div class="admin-header">
+                    <div>
+                        <h1 class="admin-title">Управление товарами 
+                            <span class="db-status" id="dbStatus">База Данных</span>
+                        </h1>
+                        <small id="productCounter">Товаров: 0/0</small>
+                    </div>
+                    <div class="admin-actions">
+                        <!-- Быстрый поиск по артикулу -->
+                        <div class="quick-search">
+                            <input type="text" id="quickSearchInput" placeholder="Артикул...">
+                            <button class="btn btn-outline" id="quickSearchBtn">
+                                <i class="fas fa-search"></i> Найти
+                            </button>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="addProductBtn">
+                            <i class="fas fa-plus"></i> Добавить товар
+                        </button>
+                        <button class="btn btn-outline" id="refreshBtn">
+                            <i class="fas fa-sync"></i> Обновить
+                        </button>
+                        <button class="btn btn-migrate" id="migrateDataBtn">
+                            <i class="fas fa-database"></i> Мигрировать данные
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="products">Товары</button>
+                    <button class="admin-tab" data-tab="sections">Разделы</button>
+                    <button class="admin-tab" data-tab="orders">Заказы</button>
+                    <button class="admin-tab" data-tab="statistics">Статистика</button>
+                </div>
+
+                <!-- Products Tab -->
+                <div class="admin-content active" id="productsTab">
+                    <div class="table-container">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Название и Артикул</th>
+                                    <th>Категория</th>
+                                    <th>Раздел</th>
+                                    <th>Цена</th>
+                                    <th>Бейдж</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sections Tab -->
+                <div class="admin-content" id="sectionsTab">
+                    <div class="admin-header">
+                        <div>
+                            <h3>Управление разделами</h3>
+                            <small id="sectionsCounter">Разделов: 0</small>
+                        </div>
+                        <div class="admin-actions">
+                            <button class="btn btn-primary" id="addSectionBtn">
+                                <i class="fas fa-plus"></i> Добавить раздел
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Название</th>
+                                    <th>Код</th>
+                                    <th>Товаров</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sectionsTableBody">
+                                <!-- Sections will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div class="admin-content" id="ordersTab">
+                    <div class="empty-state">
+                        <i class="fas fa-shopping-bag" style="font-size: 3rem; color: #ddd; margin-bottom: 1rem;"></i>
+                        <h3>Раздел заказов</h3>
+                        <p>Здесь будут отображаться заказы покупателей</p>
+                    </div>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div class="admin-content" id="statisticsTab">
+                    <div class="empty-state">
+                        <i class="fas fa-chart-bar" style="font-size: 3rem; color: #ddd; margin-bottom: 1rem;"></i>
+                        <h3>Статистика</h3>
+                        <p>Здесь будет отображаться статистика продаж</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <h2 id="modalTitle">Добавить товар</h2>
+                <form class="product-form" id="productForm">
+                    <input type="hidden" id="productId">
+                    
+                    <div class="form-group">
+                        <label for="productName">Название товара *</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productPrice">Цена (₽) *</label>
+                            <input type="number" id="productPrice" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productCategory">Категория *</label>
+                            <select id="productCategory" required>
+                                <option value="">Выберите категорию</option>
+                                <option value="pantograph">Пантографы</option>
+                                <option value="wardrobe">Гардеробные системы</option>
+                                <option value="premium">Премиум коллекция</option>
+                                <option value="kitchen">Кухонные лифты</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productSection">Раздел *</label>
+                        <select id="productSection" required>
+                            <!-- Sections will be loaded dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productSku">Артикул *</label>
+                            <input type="text" id="productSku" required>
+                            <small>Уникальный идентификатор товара</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productStock">Количество на складе</label>
+                            <input type="number" id="productStock" min="0" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Бейдж</label>
+                        <div class="badge-selector">
+                            <div class="badge-option selected" data-badge="">Без бейджа</div>
+                            <div class="badge-option" data-badge="Хит продаж">Хит продаж</div>
+                            <div class="badge-option" data-badge="Новинка">Новинка</div>
+                            <div class="badge-option" data-badge="Акция">Акция</div>
+                        </div>
+                        <input type="hidden" id="productBadge" value="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productFeatures">Особенности (каждая с новой строки)</label>
+                        <textarea id="productFeatures" rows="3" placeholder="Высококачественные материалы&#10;Эксклюзивный дизайн&#10;Прочная конструкция"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productSpecifications">Характеристики (в формате &quot;Ключ: значение&quot;)</label>
+                        <textarea id="productSpecifications" rows="4" placeholder="Материал: Массив дерева&#10;Размеры: 200x90x45 см&#10;Вес: 35 кг&#10;Цвет: Натуральное дерево"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productDescription">Описание</label>
+                        <textarea id="productDescription" rows="4" placeholder="Описание товара..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productActive">
+                                <input type="checkbox" id="productActive" checked> Активный товар
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productFeatured">
+                                <input type="checkbox" id="productFeatured"> Рекомендуемый товар
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productImages">Фотографии товара</label>
+                        <div class="image-upload-container">
+                            <div class="image-preview" id="imagePreview">
+                                <!-- Препросмотр изображений будет здесь -->
+                            </div>
+                            <input type="file" id="productImages" multiple accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-outline" id="uploadImagesBtn">
+                                <i class="fas fa-upload"></i> Загрузить фото
+                            </button>
+                            <div class="upload-info">
+                                Максимум 10 изображений, до 10MB каждое
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancelBtn">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить товар</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Modal -->
+    <div class="modal" id="sectionModal">
+        <div class="modal-content">
+            <button class="modal-close" id="sectionModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <h2 id="sectionModalTitle">Добавить раздел</h2>
+                <form class="product-form" id="sectionForm">
+                    <input type="hidden" id="sectionId">
+                    
+                    <div class="form-group">
+                        <label for="sectionName">Название раздела *</label>
+                        <input type="text" id="sectionName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sectionCode">Код раздела (латинские буквы) *</label>
+                        <input type="text" id="sectionCode" required pattern="[a-zA-Z0-9-]+" title="Только латинские буквы, цифры и дефисы">
+                        <small>Используется для фильтрации, только латинские буквы и цифры</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sectionActive">
+                            <input type="checkbox" id="sectionActive" checked> Активный раздел
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancelSectionBtn">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить раздел</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Подтверждение удаления</h3>
+                <p>Вы уверены, что хотите удалить этот товар?</p>
+                <div class="form-actions">
+                    <button class="btn btn-cancel" id="cancelDelete">Отмена</button>
+                    <button class="btn btn-delete" id="confirmDelete">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔄 ОБНОВЛЕННЫЙ Section Confirmation Modal -->
+    <div class="modal" id="sectionConfirmModal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Подтверждение удаления раздела</h3>
+                <div id="sectionDeleteInfo">
+                    <p id="sectionConfirmMessage">Вы уверены, что хотите удалить этот раздел?</p>
+                    <div id="sectionProductsWarning" style="display: none; background: #fff3cd; padding: 10px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #ffc107;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Внимание:</strong> В этом разделе есть товары. После удаления раздела эти товары станут <strong>неактивными</strong>.
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-cancel" id="cancelSectionDelete">Отмена</button>
+                    <button class="btn btn-delete" id="confirmSectionDelete">Удалить раздел</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Migration Modal -->
+    <div class="modal" id="migrationModal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Миграция данных</h3>
+                <div class="migration-status" id="migrationStatus">
+                    <p>Перенос данных из LocalStorage в Базу Данных...</p>
+                    <div class="progress" style="margin: 1rem 0;">
+                        <div id="migrationProgress" style="height: 10px; background: var(--admin-accent); width: 0%; border-radius: 5px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p id="migrationDetails">Подготовка к миграции...</p>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-cancel" id="cancelMigration">Отмена</button>
+                    <button class="btn btn-primary" id="startMigration">Начать миграцию</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-db.js"></script>
+    <script>
+        // Дополнительные функции для админки с БД
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализация статуса БД
+            const dbStatus = document.getElementById('dbStatus');
+            if (dbStatus) {
+                // Проверка подключения к серверу БД
+                checkDatabaseConnection();
+            }
+
+            // Обработка миграции данных
+            const migrateBtn = document.getElementById('migrateDataBtn');
+            const migrationModal = document.getElementById('migrationModal');
+            const startMigrationBtn = document.getElementById('startMigration');
+            const cancelMigrationBtn = document.getElementById('cancelMigration');
+
+            if (migrateBtn && migrationModal) {
+                migrateBtn.addEventListener('click', function() {
+                    migrationModal.classList.add('active');
+                });
+
+                cancelMigrationBtn.addEventListener('click', function() {
+                    migrationModal.classList.remove('active');
+                });
+
+                startMigrationBtn.addEventListener('click', function() {
+                    startDataMigration();
+                });
+            }
+
+            // Защита от копирования контента
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.closest('.admin-panel')) {
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                // Блокировка F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+                if (e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+                    (e.ctrlKey && e.key === 'u')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        // Проверка подключения к БД
+        async function checkDatabaseConnection() {
+            const dbStatus = document.getElementById('dbStatus');
+            if (!dbStatus) return;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/stats', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    dbStatus.textContent = 'База Данных';
+                    dbStatus.className = 'db-status';
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (error) {
+                dbStatus.textContent = 'База Данных (Офлайн)';
+                dbStatus.className = 'db-status offline';
+                console.warn('Database server not available:', error);
+            }
+        }
+
+        // Миграция данных
+        async function startDataMigration() {
+            const progressBar = document.getElementById('migrationProgress');
+            const migrationDetails = document.getElementById('migrationDetails');
+            const startMigrationBtn = document.getElementById('startMigration');
+
+            if (!progressBar || !migrationDetails) return;
+
+            try {
+                startMigrationBtn.disabled = true;
+                startMigrationBtn.textContent = 'Миграция...';
+                
+                // Получаем данные из LocalStorage
+                const localProducts = JSON.parse(localStorage.getItem('adminProducts')) || [];
+                const localSections = JSON.parse(localStorage.getItem('adminSections')) || [];
+
+                migrationDetails.textContent = `Найдено ${localProducts.length} товаров и ${localSections.length} разделов для миграции...`;
+                progressBar.style.width = '20%';
+
+                // Отправляем запрос на миграцию
+                const response = await fetch('http://localhost:3001/api/migrate-from-localstorage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        products: localProducts,
+                        sections: localSections
+                    })
+                });
+
+                progressBar.style.width = '60%';
+
+                if (!response.ok) {
+                    throw new Error('Migration failed');
+                }
+
+                const result = await response.json();
+                
+                progressBar.style.width = '100%';
+                migrationDetails.textContent = `Успешно мигрировано ${result.migratedProducts} товаров!`;
+
+                // Обновляем данные через 2 секунды
+                setTimeout(() => {
+                    if (window.adminPanelDB) {
+                        window.adminPanelDB.loadData();
+                    }
+                    document.getElementById('migrationModal').classList.remove('active');
+                    
+                    // Сбрасываем прогресс
+                    setTimeout(() => {
+                        progressBar.style.width = '0%';
+                        startMigrationBtn.disabled = false;
+                        startMigrationBtn.textContent = 'Начать миграцию';
+                    }, 1000);
+                }, 2000);
+
+            } catch (error) {
+                console.error('Migration error:', error);
+                migrationDetails.textContent = 'Ошибка миграции: ' + error.message;
+                progressBar.style.width = '0%';
+                startMigrationBtn.disabled = false;
+                startMigrationBtn.textContent = 'Начать миграцию';
+            }
+        }
+
+        // Показываем индикатор загрузки при переходе между страницами
+        window.addEventListener('beforeunload', function() {
+            const loadingElement = document.getElementById('pageLoading');
+            if (loadingElement) {
+                loadingElement.classList.remove('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadingElement = document.getElementById('pageLoading');
+            if (loadingElement) {
+                loadingElement.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
