@@ -96,13 +96,13 @@ function initializeDatabase() {
           return;
         }
 
-        // Создание таблицы разделов
+        // Создание таблицы разделов с FIXED DEFAULT VALUE
         db.exec(`
           CREATE TABLE IF NOT EXISTS sections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             code TEXT UNIQUE NOT NULL,
-            active BOOLEAN DEFAULT 1,
+            active BOOLEAN DEFAULT 1, -- ИЗМЕНЕНО: было 0, стало 1
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `, (err) => {
@@ -125,6 +125,9 @@ function initializeDatabase() {
             if (err) {
               console.warn('⚠️ Warning creating indexes:', err);
             }
+
+            // Проверяем структуру таблицы sections
+            checkSectionsTableStructure();
 
             // Добавляем тестовые разделы если их нет
             db.get('SELECT COUNT(*) as count FROM sections', (err, row) => {
@@ -225,6 +228,25 @@ function initializeDatabase() {
           });
         });
       });
+    });
+  });
+}
+
+// Функция проверки структуры таблицы sections
+function checkSectionsTableStructure() {
+  return new Promise((resolve, reject) => {
+    db.all("PRAGMA table_info(sections)", (err, columns) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      console.log('🔍 Sections table structure:');
+      columns.forEach(col => {
+        console.log(`- ${col.name}: ${col.type} ${col.notnull ? 'NOT NULL' : ''} ${col.dflt_value ? `DEFAULT ${col.dflt_value}` : ''}`);
+      });
+      
+      resolve(columns);
     });
   });
 }
@@ -656,16 +678,24 @@ app.get('/api/sections', (req, res) => {
   });
 });
 
+// ИСПРАВЛЕННЫЙ: Создание раздела с правильной обработкой активности
 app.post('/api/sections', (req, res) => {
-  const { name, code, active } = req.body;
+  const { name, code, active = true } = req.body; // По умолчанию активен
+  
+  console.log('🔍 Creating section with data:', { name, code, active });
   
   if (!name || !code) {
     return res.status(400).json({ error: 'Name and code are required' });
   }
 
+  // Принудительно устанавливаем активность - ВСЕГДА АКТИВЕН при создании
+  const isActive = active !== false;
+  
+  console.log('🔍 Final section active status:', isActive);
+
   db.run(
     'INSERT INTO sections (name, code, active) VALUES (?, ?, ?)',
-    [name.trim(), code.trim(), active === 'true'],
+    [name.trim(), code.trim(), isActive ? 1 : 0],
     function(err) {
       if (err) {
         console.error('POST /api/sections error:', err);
@@ -683,12 +713,23 @@ app.post('/api/sections', (req, res) => {
           res.status(500).json({ error: err.message });
           return;
         }
-        res.status(201).json({ ...newSection, active: Boolean(newSection.active) });
+        
+        console.log('✅ Section created successfully:', { 
+          id: newSection.id, 
+          name: newSection.name, 
+          active: Boolean(newSection.active) 
+        });
+        
+        res.status(201).json({ 
+          ...newSection, 
+          active: Boolean(newSection.active) 
+        });
       });
     }
   );
 });
 
+// ИСПРАВЛЕННЫЙ: Обновление раздела с правильной обработкой активности
 app.put('/api/sections/:id', (req, res) => {
   const sectionId = parseInt(req.params.id);
   
@@ -698,13 +739,20 @@ app.put('/api/sections/:id', (req, res) => {
 
   const { name, code, active } = req.body;
   
+  console.log('🔍 Updating section with data:', { name, code, active });
+  
   if (!name || !code) {
     return res.status(400).json({ error: 'Name and code are required' });
   }
 
+  // Правильное преобразование boolean в integer
+  const isActive = active === true || active === 'true' || active === 1;
+  
+  console.log('🔍 Final section active status:', isActive);
+
   db.run(
     'UPDATE sections SET name = ?, code = ?, active = ? WHERE id = ?',
-    [name.trim(), code.trim(), active === 'true', sectionId],
+    [name.trim(), code.trim(), isActive ? 1 : 0, sectionId],
     function(err) {
       if (err) {
         console.error('PUT /api/sections/:id error:', err);
@@ -726,7 +774,17 @@ app.put('/api/sections/:id', (req, res) => {
           res.status(500).json({ error: err.message });
           return;
         }
-        res.json({ ...updatedSection, active: Boolean(updatedSection.active) });
+        
+        console.log('✅ Section updated successfully:', { 
+          id: updatedSection.id, 
+          name: updatedSection.name, 
+          active: Boolean(updatedSection.active) 
+        });
+        
+        res.json({ 
+          ...updatedSection, 
+          active: Boolean(updatedSection.active) 
+        });
       });
     }
   );
@@ -888,120 +946,6 @@ app.get('/api/search', (req, res) => {
   });
 });
 
-// Миграция данных из localStorage
-app.post('/api/migrate-from-localstorage', (req, res) => {
-  const { products, sections } = req.body;
-  
-  let migratedProducts = 0;
-  let migratedSections = 0;
-  let errors = [];
-
-  const migrateSection = (section) => {
-    return new Promise((resolve) => {
-      db.run(
-        'INSERT OR IGNORE INTO sections (name, code, active) VALUES (?, ?, ?)',
-        [section.name, section.code, section.active !== false],
-        function(err) {
-          if (err) {
-            errors.push(`Section ${section.name}: ${err.message}`);
-          } else if (this.changes > 0) {
-            migratedSections++;
-          }
-          resolve();
-        }
-      );
-    });
-  };
-
-  const migrateProduct = (product) => {
-    return new Promise((resolve) => {
-      db.run(
-        `INSERT OR IGNORE INTO products (
-          sku, name, price, category, section, stock, description,
-          features, specifications, badge, active, featured, images
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          product.sku || generateSKU(product.name),
-          product.name,
-          product.price,
-          product.category,
-          product.section,
-          product.stock || 0,
-          product.description || '',
-          JSON.stringify(product.features || []),
-          JSON.stringify(product.specifications || {}),
-          product.badge || '',
-          product.active !== false,
-          product.featured || false,
-          JSON.stringify(product.images || [])
-        ],
-        function(err) {
-          if (err) {
-            errors.push(`Product ${product.name}: ${err.message}`);
-          } else if (this.changes > 0) {
-            migratedProducts++;
-          }
-          resolve();
-        }
-      );
-    });
-  };
-
-  const migrateAll = async () => {
-    // Мигрируем разделы
-    if (sections && Array.isArray(sections)) {
-      for (const section of sections) {
-        await migrateSection(section);
-      }
-    }
-    
-    // Мигрируем товары
-    if (products && Array.isArray(products)) {
-      for (const product of products) {
-        await migrateProduct(product);
-      }
-    }
-
-    res.json({ 
-      message: 'Migration completed',
-      migratedProducts,
-      migratedSections,
-      errors: errors.length > 0 ? errors : undefined
-    });
-  };
-
-  migrateAll().catch(error => {
-    console.error('Migration error:', error);
-    res.status(500).json({ error: 'Migration failed' });
-  });
-});
-
-// Функция генерации SKU
-function generateSKU(productName) {
-  const timestamp = Date.now().toString().slice(-6);
-  const namePart = productName
-    .toLowerCase()
-    .replace(/[^a-z0-9а-яё]/g, '')
-    .slice(0, 3)
-    .toUpperCase();
-  
-  return `MF${namePart}${timestamp}`;
-}
-
-// Обработка ошибок
-app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
 // Запуск сервера
 async function startServer() {
   try {
@@ -1017,7 +961,9 @@ async function startServer() {
       console.log('   PUT  /api/products/:id              - Обновить товар');
       console.log('   DEL  /api/products/:id              - Удалить товар');
       console.log('   GET  /api/sections                  - Все разделы');
-      console.log('   POST /api/migrate-from-localstorage - Миграция данных');
+      console.log('   POST /api/sections                  - Создать раздел');
+      console.log('   PUT  /api/sections/:id              - Обновить раздел');
+      console.log('   DEL  /api/sections/:id              - Удалить раздел');
       console.log('   GET  /api/search                    - Поиск товаров');
       console.log('   GET  /api/stats                     - Статистика');
     });

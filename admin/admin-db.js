@@ -1,4 +1,3 @@
-// admin-db.js - Админ-панель с поддержкой базы данных
 class AdminPanelDB {
     constructor() {
         this.API_BASE = 'http://localhost:3001/api';
@@ -14,12 +13,13 @@ class AdminPanelDB {
 
     async init() {
         await this.checkServerConnection();
-        this.setupEventListeners();
-        if (this.isServerConnected) {
-            await this.loadData();
-        } else {
-            await this.loadFromLocalStorage();
+        if (!this.isServerConnected) {
+            this.showDatabaseError();
+            return;
         }
+        
+        this.setupEventListeners();
+        await this.loadData();
         this.hideLoading();
         console.log('✅ Admin panel with DB support initialized');
     }
@@ -37,11 +37,112 @@ class AdminPanelDB {
             this.isServerConnected = true;
             return true;
         } catch (error) {
-            console.warn('❌ Database server not available, using localStorage fallback');
-            this.showNotification('Сервер базы данных недоступен. Используется локальное хранилище.', 'warning');
+            console.error('❌ Database server not available:', error);
             this.isServerConnected = false;
             return false;
         }
+    }
+
+    showDatabaseError() {
+        const errorHtml = `
+            <div class="database-error">
+                <div class="error-content">
+                    <div class="error-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h2>База данных недоступна</h2>
+                    <p>Не удалось подключиться к серверу базы данных.</p>
+                    <div class="error-details">
+                        <p><strong>Для решения проблемы:</strong></p>
+                        <ol>
+                            <li>Убедитесь, что сервер базы данных запущен</li>
+                            <li>Проверьте подключение к сети</li>
+                            <li>Обратитесь к системному администратору</li>
+                        </ol>
+                    </div>
+                    <div class="error-actions">
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            <i class="fas fa-refresh"></i> Попробовать снова
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const styles = `
+            <style>
+                .database-error {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    color: white;
+                    font-family: 'Arial', sans-serif;
+                }
+                .error-content {
+                    text-align: center;
+                    max-width: 500px;
+                    padding: 2rem;
+                    background: rgba(255, 255, 255, 0.1);
+                    backdrop-filter: blur(10px);
+                    border-radius: 15px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                }
+                .error-icon {
+                    font-size: 4rem;
+                    margin-bottom: 1rem;
+                    color: #ff6b6b;
+                }
+                .error-content h2 {
+                    font-size: 2rem;
+                    margin-bottom: 1rem;
+                    color: white;
+                }
+                .error-content p {
+                    font-size: 1.1rem;
+                    margin-bottom: 1.5rem;
+                    line-height: 1.5;
+                }
+                .error-details {
+                    background: rgba(0, 0, 0, 0.2);
+                    padding: 1rem;
+                    border-radius: 8px;
+                    margin: 1.5rem 0;
+                    text-align: left;
+                }
+                .error-details ol {
+                    margin: 0.5rem 0;
+                    padding-left: 1.5rem;
+                }
+                .error-details li {
+                    margin-bottom: 0.5rem;
+                    font-size: 0.9rem;
+                }
+                .btn {
+                    margin-top: 1rem;
+                    padding: 12px 24px;
+                    background: #ffd700;
+                    color: #333;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    transition: background 0.3s ease;
+                }
+                .btn:hover {
+                    background: #ffed4a;
+                }
+            </style>
+        `;
+
+        document.head.insertAdjacentHTML('beforeend', styles);
+        document.querySelector('.main-container').innerHTML = errorHtml;
     }
 
     hideLoading() {
@@ -71,11 +172,11 @@ class AdminPanelDB {
     }
 
     async apiRequest(endpoint, options = {}) {
-        try {
-            if (!this.isServerConnected) {
-                throw new Error('Server not available');
-            }
+        if (!this.isServerConnected) {
+            throw new Error('Database server not available');
+        }
 
+        try {
             const response = await fetch(`${this.API_BASE}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -92,13 +193,6 @@ class AdminPanelDB {
             return await response.json();
         } catch (error) {
             console.error('API request failed:', error);
-            
-            if (error.message.includes('Failed to fetch') || error.message === 'Server not available') {
-                this.isServerConnected = false;
-                this.showNotification('Сервер недоступен. Используется локальное хранилище.', 'warning');
-                throw new Error('SERVER_UNAVAILABLE');
-            }
-            
             throw error;
         }
     }
@@ -124,30 +218,8 @@ class AdminPanelDB {
             this.showNotification('Данные загружены из базы данных', 'success');
             
         } catch (error) {
-            if (error.message === 'SERVER_UNAVAILABLE') {
-                await this.loadFromLocalStorage();
-            } else {
-                console.error('Load data error:', error);
-                this.showNotification('Ошибка загрузки данных', 'error');
-                await this.loadFromLocalStorage();
-            }
-        }
-    }
-
-    async loadFromLocalStorage() {
-        try {
-            this.products = JSON.parse(localStorage.getItem('adminProducts')) || [];
-            this.sections = JSON.parse(localStorage.getItem('adminSections')) || [];
-            this.renderProducts();
-            this.renderSections();
-            this.showNotification('Данные загружены из локального хранилища', 'warning');
-        } catch (error) {
-            console.error('Error loading from localStorage:', error);
-            this.products = [];
-            this.sections = [];
-            this.renderProducts();
-            this.renderSections();
-            this.showNotification('Ошибка загрузки данных из локального хранилища', 'error');
+            console.error('Load data error:', error);
+            this.showNotification('Ошибка загрузки данных из базы данных', 'error');
         }
     }
 
@@ -162,19 +234,8 @@ class AdminPanelDB {
             this.showNotification(`Найден товар: ${product.name}`, 'success');
             return product;
         } catch (error) {
-            if (error.message === 'SERVER_UNAVAILABLE') {
-                const product = this.products.find(p => p.sku === sku.trim());
-                if (product) {
-                    this.showNotification(`Найден товар: ${product.name} (локально)`, 'success');
-                    return product;
-                } else {
-                    this.showNotification('Товар с таким артикулом не найден', 'error');
-                    return null;
-                }
-            } else {
-                this.showNotification('Товар с таким артикулом не найден', 'error');
-                return null;
-            }
+            this.showNotification('Товар с таким артикулом не найден', 'error');
+            return null;
         }
     }
 
@@ -209,10 +270,6 @@ class AdminPanelDB {
                 }
             });
         }
-
-        document.getElementById('migrateDataBtn')?.addEventListener('click', () => {
-            this.migrateDataToDB();
-        });
 
         this.setupModalListeners();
     }
@@ -284,36 +341,6 @@ class AdminPanelDB {
         }
     }
 
-    async migrateDataToDB() {
-        try {
-            const localProducts = JSON.parse(localStorage.getItem('adminProducts')) || [];
-            const localSections = JSON.parse(localStorage.getItem('adminSections')) || [];
-            
-            if (localProducts.length === 0 && localSections.length === 0) {
-                this.showNotification('Нет данных для миграции', 'warning');
-                return;
-            }
-
-            const result = await this.apiRequest('/migrate-from-localstorage', {
-                method: 'POST',
-                body: JSON.stringify({
-                    products: localProducts,
-                    sections: localSections
-                })
-            });
-
-            this.showNotification(`Мигрировано ${result.migratedProducts} товаров в базу данных`, 'success');
-            await this.loadData();
-            
-        } catch (error) {
-            if (error.message === 'SERVER_UNAVAILABLE') {
-                this.showNotification('Сервер недоступен для миграции', 'error');
-            } else {
-                this.showNotification('Ошибка миграции данных', 'error');
-            }
-        }
-    }
-
     async deleteSection(id) {
         this.sectionToDelete = id;
         const section = this.sections.find(s => s.id === id);
@@ -356,12 +383,8 @@ class AdminPanelDB {
                 await this.loadData();
                 
             } catch (error) {
-                if (error.message === 'SERVER_UNAVAILABLE') {
-                    this.showNotification('Сервер недоступен. Удаление невозможно.', 'error');
-                } else {
-                    console.error('Delete section error:', error);
-                    this.showNotification(`Ошибка удаления: ${error.message}`, 'error');
-                }
+                console.error('Delete section error:', error);
+                this.showNotification(`Ошибка удаления: ${error.message}`, 'error');
             }
             
             this.sectionToDelete = null;
@@ -400,12 +423,8 @@ class AdminPanelDB {
             this.closeModal('productModal');
             
         } catch (error) {
-            if (error.message === 'SERVER_UNAVAILABLE') {
-                this.showNotification('Сервер недоступен. Сохранение невозможно.', 'error');
-            } else {
-                console.error('Save product error:', error);
-                this.showNotification(`Ошибка сохранения: ${error.message}`, 'error');
-            }
+            console.error('Save product error:', error);
+            this.showNotification(`Ошибка сохранения: ${error.message}`, 'error');
         }
     }
 
@@ -536,11 +555,11 @@ class AdminPanelDB {
         
         return {
             name: document.getElementById('productName').value,
-            price: document.getElementById('productPrice').value,
+            price: parseFloat(document.getElementById('productPrice').value),
             category: document.getElementById('productCategory').value,
             section: document.getElementById('productSection').value,
             sku: document.getElementById('productSku').value.trim(),
-            stock: document.getElementById('productStock').value,
+            stock: parseInt(document.getElementById('productStock').value) || 0,
             description: document.getElementById('productDescription').value,
             features: this.parseFeatures(document.getElementById('productFeatures').value),
             specifications: this.parseSpecifications(document.getElementById('productSpecifications').value),
@@ -575,11 +594,7 @@ class AdminPanelDB {
                 this.showNotification('Товар удален из базы данных', 'success');
                 
             } catch (error) {
-                if (error.message === 'SERVER_UNAVAILABLE') {
-                    this.showNotification('Сервер недоступен. Удаление невозможно.', 'error');
-                } else {
-                    this.showNotification(`Ошибка удаления: ${error.message}`, 'error');
-                }
+                this.showNotification(`Ошибка удаления: ${error.message}`, 'error');
             }
             
             this.productToDelete = null;
@@ -587,6 +602,7 @@ class AdminPanelDB {
         this.closeModal('confirmModal');
     }
 
+    // ИСПРАВЛЕННЫЙ: Сохранение раздела с улучшенной логикой
     async saveSection() {
         try {
             const formData = {
@@ -595,50 +611,40 @@ class AdminPanelDB {
                 active: document.getElementById('sectionActive').checked
             };
 
+            console.log('🔍 Saving section with data:', formData);
+
             if (!formData.name || !formData.code) {
                 this.showNotification('Заполните все поля', 'error');
                 return;
             }
 
+            let result;
             if (this.currentSectionId) {
-                await this.apiRequest(`/sections/${this.currentSectionId}`, {
+                result = await this.apiRequest(`/sections/${this.currentSectionId}`, {
                     method: 'PUT',
                     body: JSON.stringify(formData)
                 });
+                this.showNotification('Раздел успешно обновлен', 'success');
             } else {
-                await this.apiRequest('/sections', {
+                // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ АКТИВНОСТЬ ДЛЯ НОВЫХ РАЗДЕЛОВ
+                formData.active = true;
+                console.log('🔍 Forcing active=true for new section');
+                
+                result = await this.apiRequest('/sections', {
                     method: 'POST',
                     body: JSON.stringify(formData)
                 });
+                this.showNotification('Раздел успешно добавлен', 'success');
             }
+
+            console.log('✅ Section save result:', result);
 
             await this.loadData();
             this.closeModal('sectionModal');
             
         } catch (error) {
-            if (error.message === 'SERVER_UNAVAILABLE') {
-                this.showNotification('Сервер недоступен. Сохранение невозможно.', 'error');
-            } else {
-                console.error('Save section error:', error);
-                this.showNotification(`Ошибка сохранения: ${error.message}`, 'error');
-            }
-        }
-    }
-
-    async updateProductsSection(oldSectionCode, newSectionCode = '') {
-        try {
-            const response = await this.apiRequest('/products/update-section', {
-                method: 'POST',
-                body: JSON.stringify({
-                    oldSection: oldSectionCode,
-                    newSection: newSectionCode
-                })
-            });
-            
-            return response.updatedCount;
-        } catch (error) {
-            console.error('Update products section error:', error);
-            return 0;
+            console.error('Save section error:', error);
+            this.showNotification(`Ошибка сохранения: ${error.message}`, 'error');
         }
     }
 
@@ -707,6 +713,8 @@ class AdminPanelDB {
     resetSectionForm() {
         document.getElementById('sectionForm').reset();
         document.getElementById('sectionId').value = '';
+        // Убедимся, что чекбокс активен по умолчанию
+        document.getElementById('sectionActive').checked = true;
     }
 
     fillProductForm(product) {

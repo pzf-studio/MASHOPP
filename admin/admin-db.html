@@ -43,9 +43,6 @@
                         <button class="btn btn-outline" id="refreshBtn">
                             <i class="fas fa-sync"></i> Обновить
                         </button>
-                        <button class="btn btn-migrate" id="migrateDataBtn">
-                            <i class="fas fa-database"></i> Мигрировать данные
-                        </button>
                     </div>
                 </div>
 
@@ -323,55 +320,14 @@
         </div>
     </div>
 
-    <!-- Migration Modal -->
-    <div class="modal" id="migrationModal">
-        <div class="modal-content">
-            <div class="modal-body">
-                <h3>Миграция данных</h3>
-                <div class="migration-status" id="migrationStatus">
-                    <p>Перенос данных из LocalStorage в Базу Данных...</p>
-                    <div class="progress" style="margin: 1rem 0;">
-                        <div id="migrationProgress" style="height: 10px; background: var(--admin-accent); width: 0%; border-radius: 5px; transition: width 0.3s ease;"></div>
-                    </div>
-                    <p id="migrationDetails">Подготовка к миграции...</p>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-cancel" id="cancelMigration">Отмена</button>
-                    <button class="btn btn-primary" id="startMigration">Начать миграцию</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="admin-db.js"></script>
     <script>
-        // Дополнительные функции для админки с БД
         document.addEventListener('DOMContentLoaded', function() {
             // Инициализация статуса БД
             const dbStatus = document.getElementById('dbStatus');
             if (dbStatus) {
                 // Проверка подключения к серверу БД
                 checkDatabaseConnection();
-            }
-
-            // Обработка миграции данных
-            const migrateBtn = document.getElementById('migrateDataBtn');
-            const migrationModal = document.getElementById('migrationModal');
-            const startMigrationBtn = document.getElementById('startMigration');
-            const cancelMigrationBtn = document.getElementById('cancelMigration');
-
-            if (migrateBtn && migrationModal) {
-                migrateBtn.addEventListener('click', function() {
-                    migrationModal.classList.add('active');
-                });
-
-                cancelMigrationBtn.addEventListener('click', function() {
-                    migrationModal.classList.remove('active');
-                });
-
-                startMigrationBtn.addEventListener('click', function() {
-                    startDataMigration();
-                });
             }
 
             // Защита от копирования контента
@@ -415,72 +371,6 @@
                 dbStatus.textContent = 'База Данных (Офлайн)';
                 dbStatus.className = 'db-status offline';
                 console.warn('Database server not available:', error);
-            }
-        }
-
-        // Миграция данных
-        async function startDataMigration() {
-            const progressBar = document.getElementById('migrationProgress');
-            const migrationDetails = document.getElementById('migrationDetails');
-            const startMigrationBtn = document.getElementById('startMigration');
-
-            if (!progressBar || !migrationDetails) return;
-
-            try {
-                startMigrationBtn.disabled = true;
-                startMigrationBtn.textContent = 'Миграция...';
-                
-                // Получаем данные из LocalStorage
-                const localProducts = JSON.parse(localStorage.getItem('adminProducts')) || [];
-                const localSections = JSON.parse(localStorage.getItem('adminSections')) || [];
-
-                migrationDetails.textContent = `Найдено ${localProducts.length} товаров и ${localSections.length} разделов для миграции...`;
-                progressBar.style.width = '20%';
-
-                // Отправляем запрос на миграцию
-                const response = await fetch('http://localhost:3001/api/migrate-from-localstorage', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        products: localProducts,
-                        sections: localSections
-                    })
-                });
-
-                progressBar.style.width = '60%';
-
-                if (!response.ok) {
-                    throw new Error('Migration failed');
-                }
-
-                const result = await response.json();
-                
-                progressBar.style.width = '100%';
-                migrationDetails.textContent = `Успешно мигрировано ${result.migratedProducts} товаров!`;
-
-                // Обновляем данные через 2 секунды
-                setTimeout(() => {
-                    if (window.adminPanelDB) {
-                        window.adminPanelDB.loadData();
-                    }
-                    document.getElementById('migrationModal').classList.remove('active');
-                    
-                    // Сбрасываем прогресс
-                    setTimeout(() => {
-                        progressBar.style.width = '0%';
-                        startMigrationBtn.disabled = false;
-                        startMigrationBtn.textContent = 'Начать миграцию';
-                    }, 1000);
-                }, 2000);
-
-            } catch (error) {
-                console.error('Migration error:', error);
-                migrationDetails.textContent = 'Ошибка миграции: ' + error.message;
-                progressBar.style.width = '0%';
-                startMigrationBtn.disabled = false;
-                startMigrationBtn.textContent = 'Начать миграцию';
             }
         }
 

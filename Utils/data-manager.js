@@ -1,4 +1,4 @@
-// Utils/data-manager.js - Менеджер данных для магазина с поддержкой ImageManager
+// Utils/data-manager.js - Менеджер данных для магазина с поддержкой БД
 class DataManager {
     constructor() {
         this.categories = {
@@ -8,19 +8,166 @@ class DataManager {
             'kitchen': 'Кухонные лифты'
         };
         this.isInitialized = false;
+        this.API_BASE = 'http://localhost:3001/api';
+        this.isServerConnected = false;
         this.init();
     }
 
-    init() {
+    async init() {
+        await this.checkServerConnection();
+        if (!this.isServerConnected) {
+            this.showTechnicalWorksMessage();
+            return;
+        }
+        
         this.setupEventListeners();
-        this.loadInitialData();
-        this.restoreImagesFromManager();
+        await this.loadInitialData();
         this.isInitialized = true;
-        console.log('DataManager initialized successfully');
+        console.log('DataManager initialized successfully with database');
+    }
+
+    async checkServerConnection() {
+        try {
+            const response = await fetch(`${this.API_BASE}/health`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Server not responding');
+            
+            console.log('✅ Connected to database server');
+            this.isServerConnected = true;
+            return true;
+        } catch (error) {
+            console.error('❌ Database server not available:', error);
+            this.isServerConnected = false;
+            return false;
+        }
+    }
+
+    showTechnicalWorksMessage() {
+        // Создаем сообщение о технических работах
+        const message = document.createElement('div');
+        message.className = 'technical-works-message';
+        message.innerHTML = `
+            <div class="technical-works-content">
+                <div class="technical-works-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h2>Ведутся технические работы</h2>
+                <p>Магазин временно недоступен, но вы можете связаться с нами напрямую!</p>
+                <div class="technical-works-details">
+                    <p><strong>Телефон:</strong> +7 (910) 005-34-24</p>
+                    <p><strong>Наше сообщество:</strong> _________</p>
+                </div>
+                <button onclick="location.reload()" class="btn btn-primary">
+                    <i class="fas fa-refresh"></i> Попробовать снова
+                </button>
+            </div>
+        `;
+        
+        // Добавляем стили
+        const styles = document.createElement('style');
+        styles.textContent = `
+            .technical-works-message {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                color: white;
+                font-family: 'Arial', sans-serif;
+            }
+            .technical-works-content {
+                text-align: center;
+                max-width: 500px;
+                padding: 2rem;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 15px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .technical-works-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+                color: #ffd700;
+            }
+            .technical-works-content h2 {
+                font-size: 2rem;
+                margin-bottom: 1rem;
+                color: white;
+            }
+            .technical-works-content p {
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+                line-height: 1.5;
+            }
+            .technical-works-details {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                text-align: left;
+            }
+            .technical-works-details p {
+                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+            }
+            .btn {
+                margin-top: 1rem;
+                padding: 12px 24px;
+                background: #ffd700;
+                color: #333;
+                border: none;
+                border-radius: 5px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: background 0.3s ease;
+            }
+            .btn:hover {
+                background: #ffed4a;
+            }
+        `;
+        
+        document.head.appendChild(styles);
+        document.body.innerHTML = '';
+        document.body.appendChild(message);
+    }
+
+    async apiRequest(endpoint, options = {}) {
+        if (!this.isServerConnected) {
+            throw new Error('Database server not available');
+        }
+
+        try {
+            const response = await fetch(`${this.API_BASE}${endpoint}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     setupEventListeners() {
-        // Слушаем события обновления данных
         window.addEventListener('productsDataUpdated', () => {
             console.log('Products data updated');
         });
@@ -30,195 +177,82 @@ class DataManager {
         });
     }
 
-    loadInitialData() {
-        // Проверяем несколько возможных ключей
-        if (!localStorage.getItem('products') && !localStorage.getItem('adminProducts')) {
-            this.initializeSampleData();
-        } else {
-            // Миграция данных из старого формата
-            this.migrateDataFromAdmin();
+    async loadInitialData() {
+        // Проверяем соединение с сервером
+        if (!this.isServerConnected) {
+            throw new Error('Database server not available');
         }
-    }
 
-    // Новый метод для миграции данных
-    migrateDataFromAdmin() {
         try {
-            const adminProducts = localStorage.getItem('adminProducts');
-            const shopProducts = localStorage.getItem('products');
-            
-            if (adminProducts && !shopProducts) {
-                // Мигрируем данные из админки в магазин
-                const products = JSON.parse(adminProducts);
-                localStorage.setItem('products', JSON.stringify(products));
-                console.log('Migrated products from admin to shop:', products.length);
-            }
-            
-            // Также проверяем наличие данных в новом формате админки
-            const adminProductsNew = localStorage.getItem('adminProducts');
-            if (adminProductsNew && (!shopProducts || JSON.parse(shopProducts).length === 0)) {
-                const products = JSON.parse(adminProductsNew);
-                const activeProducts = products.filter(p => p.active !== false);
-                localStorage.setItem('products', JSON.stringify(activeProducts));
-                console.log('Migrated active products from new admin format:', activeProducts.length);
-            }
+            // Загружаем начальные данные
+            const [products, sections] = await Promise.all([
+                this.apiRequest('/products?active=true'),
+                this.apiRequest('/sections?active=true')
+            ]);
+
+            console.log('Initial data loaded:', {
+                products: products.length,
+                sections: sections.length
+            });
+
         } catch (error) {
-            console.error('Error migrating data:', error);
-        }
-    }
-
-    initializeSampleData() {
-        // Создаем несколько тестовых товаров
-        const sampleProducts = [
-            {
-                id: 1,
-                name: 'Пантограф классический',
-                price: 15000,
-                category: 'pantograph',
-                section: 'classic',
-                description: 'Классический пантограф для гардеробной системы',
-                active: true,
-                featured: true,
-                stock: 5,
-                sku: 'MF001',
-                images: ['../images/placeholder.jpg'],
-                features: ['Выдвижная система', 'Плавный ход'],
-                specifications: { 'Материал': 'Сталь', 'Цвет': 'Хром' },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: 2,
-                name: 'Гардеробная система премиум',
-                price: 45000,
-                category: 'wardrobe',
-                section: 'premium',
-                description: 'Премиум гардеробная система с итальянской фурнитурой',
-                active: true,
-                featured: true,
-                stock: 3,
-                sku: 'MF002',
-                images: ['../images/placeholder.jpg'],
-                features: ['Итальянская фурнитура', 'Система мягкого закрывания'],
-                specifications: { 'Материал': 'Дуб', 'Цвет': 'Белый' },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            }
-        ];
-
-        const sampleSections = [
-            { id: 1, name: 'Классические', code: 'classic', product_count: 0, active: true },
-            { id: 2, name: 'Современные', code: 'modern', product_count: 0, active: true },
-            { id: 3, name: 'Премиум', code: 'premium', product_count: 0, active: true }
-        ];
-
-        localStorage.setItem('products', JSON.stringify(sampleProducts));
-        localStorage.setItem('sections', JSON.stringify(sampleSections));
-        console.log('Sample data initialized with', sampleProducts.length, 'products');
-    }
-
-    // НОВЫЙ МЕТОД: Восстановление изображений из ImageManager
-    restoreImagesFromManager() {
-        if (!window.imageManager) return;
-        
-        const products = this.getProducts();
-        let restoredCount = 0;
-        
-        products.forEach(product => {
-            if (product.sku && (!product.images || product.images.length === 0)) {
-                const restoredImages = window.imageManager.getProductImages(product);
-                if (restoredImages.length > 0) {
-                    product.images = restoredImages;
-                    restoredCount++;
-                }
-            }
-        });
-
-        if (restoredCount > 0) {
-            this.updateProducts(products);
-            console.log(`DataManager: Restored images for ${restoredCount} products from ImageManager`);
+            console.error('Error loading initial data:', error);
+            throw error;
         }
     }
 
     // Получение товаров с фильтрацией
-    getProducts(filters = {}) {
-        let products = JSON.parse(localStorage.getItem('products')) || [];
-        
-        // Если товаров нет, пробуем мигрировать из админки
-        if (products.length === 0) {
-            this.migrateDataFromAdmin();
-            products = JSON.parse(localStorage.getItem('products')) || [];
-        }
-        
-        console.log('Total products found:', products.length);
+    async getProducts(filters = {}) {
+        try {
+            let endpoint = '/products?';
+            const params = [];
 
-        // Применяем фильтры
-        if (filters.active !== undefined) {
-            products = products.filter(product => product.active === filters.active);
-            console.log('After active filter:', products.length);
-        }
-        
-        if (filters.category) {
-            products = products.filter(product => product.category === filters.category);
-            console.log('After category filter:', products.length);
-        }
-        
-        if (filters.section) {
-            products = products.filter(product => product.section === filters.section);
-            console.log('After section filter:', products.length);
-        }
-        
-        if (filters.featured) {
-            products = products.filter(product => product.featured);
-            console.log('After featured filter:', products.length);
-        }
-
-        if (filters.search) {
-            const searchTerm = filters.search.toLowerCase();
-            products = products.filter(product => 
-                product.name.toLowerCase().includes(searchTerm) ||
-                product.description?.toLowerCase().includes(searchTerm) ||
-                product.category?.toLowerCase().includes(searchTerm)
-            );
-            console.log('After search filter:', products.length);
-        }
-
-        // Сортировка
-        if (filters.sort) {
-            switch (filters.sort) {
-                case 'price_asc':
-                    products.sort((a, b) => a.price - b.price);
-                    break;
-                case 'price_desc':
-                    products.sort((a, b) => b.price - a.price);
-                    break;
-                case 'name':
-                    products.sort((a, b) => a.name.localeCompare(b.name));
-                    break;
-                case 'newest':
-                default:
-                    products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-                    break;
+            if (filters.active !== undefined) {
+                params.push(`active=${filters.active}`);
             }
-        }
+            
+            if (filters.category) {
+                params.push(`category=${filters.category}`);
+            }
+            
+            if (filters.section) {
+                params.push(`section=${filters.section}`);
+            }
+            
+            if (filters.featured) {
+                params.push(`featured=${filters.featured}`);
+            }
 
-        return products;
+            if (filters.search) {
+                params.push(`search=${encodeURIComponent(filters.search)}`);
+            }
+
+            if (filters.sort) {
+                params.push(`sort=${filters.sort}`);
+            }
+
+            if (filters.limit) {
+                params.push(`limit=${filters.limit}`);
+            }
+
+            endpoint += params.join('&');
+
+            const products = await this.apiRequest(endpoint);
+            return products;
+        } catch (error) {
+            console.error('Error getting products:', error);
+            return [];
+        }
     }
 
     // Получение разделов
-    getSections() {
-        let sections = JSON.parse(localStorage.getItem('sections')) || [];
-        
-        // Если разделов нет, создаем базовые
-        if (sections.length === 0) {
-            sections = [
-                { id: 1, name: 'Классические', code: 'classic', product_count: 0, active: true },
-                { id: 2, name: 'Современные', code: 'modern', product_count: 0, active: true },
-                { id: 3, name: 'Премиум', code: 'premium', product_count: 0, active: true }
-            ];
-            localStorage.setItem('sections', JSON.stringify(sections));
+    async getSections() {
+        try {
+            return await this.apiRequest('/sections?active=true');
+        } catch (error) {
+            console.error('Error getting sections:', error);
+            return [];
         }
-        
-        return sections;
     }
 
     // Получение категорий
@@ -226,74 +260,76 @@ class DataManager {
         return this.categories;
     }
 
-    // ОБНОВЛЕННЫЙ МЕТОД: Получение товара по ID
-    getProductById(id) {
-        const products = this.getProducts();
-        const product = products.find(product => product.id === id);
-        
-        // Если у товара нет изображений, пробуем восстановить из ImageManager
-        if (product && product.sku && (!product.images || product.images.length === 0)) {
-            if (window.imageManager) {
-                const restoredImages = window.imageManager.getProductImages(product);
-                if (restoredImages.length > 0) {
-                    product.images = restoredImages;
-                    console.log('DataManager: Restored images for product:', product.sku);
-                }
-            }
+    // Получение товара по ID
+    async getProductById(id) {
+        try {
+            return await this.apiRequest(`/products/${id}`);
+        } catch (error) {
+            console.error('Error getting product by ID:', error);
+            return null;
         }
-        
-        return product;
+    }
+
+    // Получение товара по артикулу
+    async getProductBySku(sku) {
+        try {
+            return await this.apiRequest(`/products/sku/${sku}`);
+        } catch (error) {
+            console.error('Error getting product by SKU:', error);
+            return null;
+        }
     }
 
     // Получение рекомендуемых товаров
-    getFeaturedProducts(limit = 8) {
-        return this.getProducts({ featured: true, active: true }).slice(0, limit);
+    async getFeaturedProducts(limit = 8) {
+        return this.getProducts({ featured: true, active: true, limit });
     }
 
     // Получение товаров по категории
-    getProductsByCategory(category, limit = null) {
-        let products = this.getProducts({ category, active: true });
-        if (limit) {
-            products = products.slice(0, limit);
-        }
-        return products;
+    async getProductsByCategory(category, limit = null) {
+        const filters = { category, active: true };
+        if (limit) filters.limit = limit;
+        return this.getProducts(filters);
     }
 
     // Получение товаров по разделу
-    getProductsBySection(section, limit = null) {
-        let products = this.getProducts({ section, active: true });
-        if (limit) {
-            products = products.slice(0, limit);
-        }
-        return products;
+    async getProductsBySection(section, limit = null) {
+        const filters = { section, active: true };
+        if (limit) filters.limit = limit;
+        return this.getProducts(filters);
     }
 
     // Поиск товаров
-    searchProducts(query) {
-        const products = this.getProducts({ active: true });
-        const lowerQuery = query.toLowerCase();
-        
-        return products.filter(product => 
-            product.name.toLowerCase().includes(lowerQuery) ||
-            product.description?.toLowerCase().includes(lowerQuery) ||
-            product.category?.toLowerCase().includes(lowerQuery)
-        );
+    async searchProducts(query) {
+        return this.getProducts({ search: query, active: true });
     }
 
-    // Обновление данных
-    updateProducts(products) {
-        localStorage.setItem('products', JSON.stringify(products));
-        window.dispatchEvent(new CustomEvent('productsDataUpdated'));
+    // Обновление данных (для админ-панели)
+    async updateProducts(products) {
+        try {
+            // В реальном приложении здесь будет вызов API для обновления
+            console.log('Products update requested:', products);
+            window.dispatchEvent(new CustomEvent('productsDataUpdated'));
+        } catch (error) {
+            console.error('Error updating products:', error);
+            throw error;
+        }
     }
 
-    updateSections(sections) {
-        localStorage.setItem('sections', JSON.stringify(sections));
-        window.dispatchEvent(new CustomEvent('sectionsDataUpdated'));
+    async updateSections(sections) {
+        try {
+            // В реальном приложении здесь будет вызов API для обновления
+            console.log('Sections update requested:', sections);
+            window.dispatchEvent(new CustomEvent('sectionsDataUpdated'));
+        } catch (error) {
+            console.error('Error updating sections:', error);
+            throw error;
+        }
     }
 
-    // НОВЫЙ МЕТОД: Принудительная синхронизация с админкой
-    syncFromAdmin() {
-        return this.migrateDataFromAdmin();
+    // Проверка доступности сервера
+    async checkHealth() {
+        return await this.checkServerConnection();
     }
 }
 
