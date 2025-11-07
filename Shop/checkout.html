@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оформление заказа - MA Furniture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="shop.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="../index.html">
+                        <div class="logo-container">
+                            <img src="../images/logo2.png" alt="MA Furniture" class="logo-image">
+                            <div class="logo-text-container">
+                                <span class="logo-text">MA FURNITURE</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="../index.html">Главная</a></li>
+                        <li><a href="shop.html">Каталог</a></li>
+                        <li><a href="../index.html#about">О компании</a></li>
+                        <li><a href="../index.html#faq">FAQ</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="header-actions">
+                    <a href="https://t.me/Ma_Furniture_ru" class="btn btn-outline btn-telegram">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span>Telegram</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="checkout">
+        <div class="container">
+            <h1 class="checkout-title">Оформление заказа</h1>
+            
+            <div class="checkout-content">
+                <div class="checkout-form">
+                    <h2 class="form-title">Данные для заказа</h2>
+                    <form id="orderForm">
+                        <div class="form-group">
+                            <label for="customerName" class="form-label">ФИО *</label>
+                            <input type="text" id="customerName" class="form-input" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerEmail" class="form-label">Email *</label>
+                            <input type="email" id="customerEmail" class="form-input" required placeholder="example@mail.ru">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerPhone" class="form-label">Номер телефона *</label>
+                            <input type="tel" id="customerPhone" class="form-input" required placeholder="+7 (900) 123-45-67">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="preferredMessenger" class="form-label">Предпочитаемый мессенджер</label>
+                            <select id="preferredMessenger" class="form-select">
+                                <option value="telegram">Telegram</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="phone">Телефонный звонок</option>
+                                <option value="email">Email</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="orderComment" class="form-label">Комментарий к заказу</label>
+                            <textarea id="orderComment" class="form-textarea" placeholder="Ваши пожелания или дополнительная информация..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <a href="shop.html" class="btn btn-back">
+                                <i class="fas fa-arrow-left"></i>
+                                Вернуться в магазин
+                            </a>
+                            <button type="submit" class="btn btn-submit" id="submitOrder">
+                                <i class="fas fa-paper-plane"></i>
+                                Оформить заказ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="order-summary">
+                    <h2 class="summary-title">Ваш заказ</h2>                 
+                    <div class="summary-items" id="orderItems">
+                    </div>                  
+                    <div class="summary-totals">
+                        <div class="total-row">
+                            <span>Товары:</span>
+                            <span id="subtotalAmount">0 ₽</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Доставка:</span>
+                            <span>Рассчитывается менеджером</span>
+                        </div>
+                        <div class="total-row final">
+                            <span>Итого:</span>
+                            <span id="totalAmount">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>MA Furniture</h3>
+                    <p>Эксклюзивные гардеробные системы премиум-класса с итальянским дизайном и немецкой точностью.</p>
+                    <div class="social-links">
+                        <a href="https://t.me/Ma_Furniture_ru" aria-label="Telegram">
+                            <i class="fab fa-telegram-plane"></i>
+                        </a>
+                        <a href="#" aria-label="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" aria-label="WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div> 
+                <div class="footer-section">
+                    <h4>Навигация</h4>
+                    <ul>
+                        <li><a href="../index.html">Главная</a></li>
+                        <li><a href="../index.html#about">О компании</a></li>
+                        <li><a href="shop.html">Магазин</a></li>
+                        <li><a href="../index.html#faq">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Категории</h4>
+                    <ul>
+                        <li><a href="shop.html?category=pantograph">Пантографы</a></li>
+                        <li><a href="shop.html?category=wardrobe">Гардеробные системы</a></li>
+                        <li><a href="shop.html?category=premium">Премиум коллекция</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Контакты</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> +7 (910) 005-34-24</li>
+                        <li><i class="fas fa-envelope"></i> ma.furniture@mail.ru</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Москва, Россия</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 MA Furniture. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        class CheckoutSystem {
+            constructor() {
+                this.cart = this.loadCart();
+                this.init();
+            }
+
+            init() {
+                this.renderOrderSummary();
+                this.setupEventListeners();
+                this.setupCartSync();
+            }
+
+            loadCart() {
+                if (typeof getCartData === 'function') {
+                    return getCartData();
+                }
+                try {
+                    return JSON.parse(localStorage.getItem('ma_furniture_cart')) || [];
+                } catch (error) {
+                    console.error('Error loading cart:', error);
+                    return [];
+                }
+            }
+
+            setupCartSync() {
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'ma_furniture_cart') {
+                        console.log('Обнаружено изменение корзины в localStorage');
+                        this.cart = this.loadCart();
+                        this.renderOrderSummary();
+                    }
+                });
+
+                window.addEventListener('cartUpdated', (e) => {
+                    console.log('Получено событие обновления корзины');
+                    this.cart = (e.detail && e.detail.cart) ? e.detail.cart : this.loadCart();
+                    this.renderOrderSummary();
+                });
+
+                setTimeout(() => {
+                    this.cart = this.loadCart();
+                    this.renderOrderSummary();
+                }, 100);
+            }
+
+            renderOrderSummary() {
+                const itemsContainer = document.getElementById('orderItems');
+                const subtotalElement = document.getElementById('subtotalAmount');
+                const totalElement = document.getElementById('totalAmount');
+                const submitBtn = document.getElementById('submitOrder');
+
+                if (!itemsContainer || !subtotalElement || !totalElement) {
+                    console.error('Required elements not found');
+                    return;
+                }
+
+                if (this.cart.length === 0) {
+                    itemsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-shopping-cart"></i>
+                            <h3>Корзина пуста</h3>
+                            <p>Добавьте товары из каталога</p>
+                            <a href="shop.html" class="btn btn-primary">Перейти в магазин</a>
+                        </div>
+                    `;
+                    subtotalElement.textContent = '0 ₽';
+                    totalElement.textContent = '0 ₽';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                    return;
+                }
+
+                itemsContainer.innerHTML = this.cart.map(item => `
+                    <div class="summary-item">
+                        <div class="item-info">
+                            <div class="item-details">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-price">${this.formatPrice(item.price)}</div>
+                                <div class="item-quantity">Количество: ${item.quantity}</div>
+                            </div>
+                        </div>
+                        <div class="item-total">${this.formatPrice(item.price * item.quantity)}</div>
+                    </div>
+                `).join('');
+
+                const subtotal = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                subtotalElement.textContent = this.formatPrice(subtotal);
+                totalElement.textContent = this.formatPrice(subtotal);
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('orderForm');
+                const submitBtn = document.getElementById('submitOrder');
+
+                if (!form || !submitBtn) {
+                    console.error('Form or submit button not found');
+                    return;
+                }
+
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitOrder();
+                });
+
+                form.addEventListener('input', () => {
+                    const isValid = form.checkValidity();
+                    const hasItems = this.cart.length > 0;
+                    submitBtn.disabled = !isValid || !hasItems;
+                });
+
+                submitBtn.disabled = this.cart.length === 0;
+            }
+
+            async submitOrder() {
+                const submitBtn = document.getElementById('submitOrder');
+                if (!submitBtn) {
+                    console.error('Submit button not found');
+                    return;
+                }
+
+                const originalText = submitBtn.innerHTML;
+                
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+
+                try {
+                    const formData = {
+                        name: document.getElementById('customerName').value,
+                        email: document.getElementById('customerEmail').value,
+                        phone: document.getElementById('customerPhone').value,
+                        messenger: document.getElementById('preferredMessenger').value,
+                        comment: document.getElementById('orderComment').value,
+                        items: this.cart,
+                        total: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                        timestamp: new Date().toLocaleString('ru-RU')
+                    };
+
+                    const message = this.formatTelegramMessage(formData);
+                    
+                    const encodedMessage = encodeURIComponent(message);
+                    
+                    const telegramUrl = `https://t.me/Ma_Furniture_ru?text=${encodedMessage}`;
+                    
+                    setTimeout(() => {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.innerHTML = originalText;
+                        
+                        this.showNotification('Заказ успешно оформлен! Открываем Telegram...', 'success');
+                        
+                        this.clearCart();
+                        
+                        window.open(telegramUrl, '_blank');
+                        
+                        setTimeout(() => {
+                            window.location.href = '../index.html';
+                        }, 3000);
+                        
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Order submission error:', error);
+                    if (submitBtn) {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                    
+                    this.showNotification('Ошибка при оформлении заказа. Попробуйте еще раз.', 'error');
+                }
+            }
+
+            clearCart() {
+                if (typeof clearCart === 'function') {
+                    clearCart();
+                } else {
+                    try {
+                        localStorage.removeItem('ma_furniture_cart');
+                    } catch (error) {
+                        console.error('Error clearing cart:', error);
+                    }
+                }
+                this.cart = [];
+            }
+
+            formatTelegramMessage(formData) {
+                const messengerNames = {
+                    'telegram': 'Telegram',
+                    'whatsapp': 'WhatsApp', 
+                    'viber': 'Viber',
+                    'phone': 'Телефонный звонок',
+                    'email': 'Email'
+                };
+
+                let message = '🛒 НОВЫЙ ЗАКАЗ MA FURNITURE\n\n';
+                message += '📅 ' + formData.timestamp + '\n\n';
+                
+                message += '👤 КЛИЕНТ:\n';
+                message += '• ФИО: ' + formData.name + '\n';
+                message += '• Email: ' + formData.email + '\n';
+                message += '• Телефон: ' + formData.phone + '\n';
+                message += '• Предпочтительный способ связи: ' + (messengerNames[formData.messenger] || formData.messenger) + '\n\n';
+                
+                if (formData.comment) {
+                    message += '💬 КОММЕНТАРИЙ КЛИЕНТА:\n' + formData.comment + '\n\n';
+                }
+                
+                message += '🛍️ СОСТАВ ЗАКАЗА:\n';
+                formData.items.forEach((item, index) => {
+                    message += (index + 1) + '. ' + item.name + '\n';
+                    message += '   Кол-во: ' + item.quantity + ' шт.\n';
+                    message += '   Цена: ' + this.formatPrice(item.price) + ' × ' + item.quantity + ' = ' + this.formatPrice(item.price * item.quantity) + '\n\n';
+                });
+                
+                message += '💰 ИТОГО: ' + this.formatPrice(formData.total) + '\n\n';
+                message += '📍 ДОСТАВКА: рассчитывается менеджером\n\n';
+                message += '⚡ Заказ требует оперативной обработки!';
+
+                return message;
+            }
+
+            formatPrice(price) {
+                return new Intl.NumberFormat('ru-RU', {
+                    style: 'currency',
+                    currency: 'RUB',
+                    minimumFractionDigits: 0
+                }).format(price);
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + type;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                        ${message}
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new CheckoutSystem();
+        });
+    </script>
+    <script src="../Utils/image-manager.js"></script>
+</body>
+</html>
